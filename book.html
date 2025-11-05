@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Book a Same-Day A-to-B Courier | Gilead Couriers</title>
+  <meta name="description" content="Discreet. Reliable. Elite. Book a same-day courier now."/>
+  <style>
+    :root{--bg:#0b1220;--card:#121a2a;--muted:#9fb0c9;--text:#e8eef7;--accent:#4f8cff}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:960px;margin:0 auto;padding:24px}
+    .card{background:var(--card);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:20px}
+    h1{margin:8px 0 12px;font-size:26px}
+    p{color:#cfd8e3;margin:6px 0 18px}
+    form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    label{font-size:13px;color:var(--muted)}
+    input,select,textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #2a3658;background:#0f1730;color:#e8eef7}
+    .row-2{grid-column:span 2}
+    .btn{background:var(--accent);color:#06122a;border:none;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer}
+    .pill{display:inline-block;background:#1c2742;border:1px solid #2a3658;border-radius:999px;padding:6px 12px;font-size:12px;color:#cfd8e3;margin-right:8px}
+    .notes{min-height:80px;resize:vertical}
+    .right{justify-self:end}
+    .muted{color:var(--muted);font-size:13px}
+    .row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+    .price{font-size:22px;font-weight:800;margin:0;color:#fff}
+    .hide{display:none}
+    @media (max-width:720px){form{grid-template-columns:1fr}.row-2{grid-column:auto}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Book a Same-Day Courier</h1>
+      <p>Fixed £90 within 20 miles. £1.80+/mile thereafter. Out-of-hours & weekend surcharges apply automatically.</p>
+
+      <form id="bookingForm" autocomplete="on" novalidate>
+        <div>
+          <label>Pickup postcode</label>
+          <input id="pickup" name="pickup" placeholder="e.g. NG9 1AZ" required />
+        </div>
+        <div>
+          <label>Drop-off postcode</label>
+          <input id="dropoff" name="dropoff" placeholder="e.g. GL6 0RT" required />
+        </div>
+
+        <div>
+          <label>Pickup date</label>
+          <input id="pickupDate" name="pickupDate" type="date" required />
+        </div>
+        <div>
+          <label>Pickup time</label>
+          <input id="pickupTime" name="pickupTime" type="time" required />
+        </div>
+
+        <div>
+          <label>Your name</label>
+          <input id="name" name="name" placeholder="Full name" required />
+        </div>
+        <div>
+          <label>Contact email</label>
+          <input id="email" name="email" type="email" placeholder="you@company.com" required />
+        </div>
+
+        <div>
+          <label>Contact phone</label>
+          <input id="phone" name="phone" placeholder="+44..." />
+        </div>
+        <div>
+          <label>Vehicle</label>
+          <select id="vehicle" name="vehicle">
+            <option value="transit" selected>Ford Transit (MWB)</option>
+          </select>
+        </div>
+
+        <div class="row-2">
+          <label>Notes (optional)</label>
+          <textarea id="notes" name="notes" class="notes" placeholder="Item details, access info, reference PO, etc."></textarea>
+        </div>
+
+        <div class="row-2">
+          <div class="row">
+            <span class="pill">White-glove handling (optional)</span>
+            <span class="pill">Direct drive — no hub</span>
+            <span class="pill">Fully insured</span>
+          </div>
+        </div>
+
+        <div class="grid-3 row-2">
+          <div>
+            <div class="muted">Distance</div>
+            <div id="distance">–</div>
+          </div>
+          <div>
+            <div class="muted">ETA (drive)</div>
+            <div id="eta">–</div>
+          </div>
+          <div class="right">
+            <div class="muted">Estimated price</div>
+            <div id="price" class="price">–</div>
+          </div>
+        </div>
+
+        <div class="row-2">
+          <button class="btn" id="quoteBtn" type="button">Get live quote</button>
+          <button class="btn right hide" id="payBtn" type="button">Pay & confirm</button>
+        </div>
+        <div class="row-2 muted" id="msg"></div>
+      </form>
+    </div>
+  </div>
+
+<script>
+const msg = (t)=>{document.getElementById('msg').textContent=t};
+const fmtGBP = v => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:2}).format(v);
+
+async function getQuote(payload){
+  const r = await fetch('/api/checkout/create-session', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({...payload, mode:'quote'})
+  });
+  if(!r.ok){throw new Error('Quote failed');}
+  return r.json();
+}
+
+async function startCheckout(payload){
+  const r = await fetch('/api/checkout/create-session', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({...payload, mode:'checkout'})
+  });
+  if(!r.ok){throw new Error('Checkout create failed');}
+  const { url } = await r.json();
+  if(url) window.location.href = url;
+}
+
+document.getElementById('quoteBtn').addEventListener('click', async ()=>{
+  msg('');
+  const pickup = document.getElementById('pickup').value.trim();
+  const dropoff = document.getElementById('dropoff').value.trim();
+  const pickupDate = document.getElementById('pickupDate').value;
+  const pickupTime = document.getElementById('pickupTime').value;
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const vehicle = document.getElementById('vehicle').value;
+  const notes = document.getElementById('notes').value.trim();
+
+  if(!pickup || !dropoff || !pickupDate || !pickupTime || !name || !email){
+    msg('Please fill all required fields.');
+    return;
+  }
+
+  try{
+    const payload = { pickup, dropoff, pickupDate, pickupTime, name, email, phone, vehicle, notes };
+    const data = await getQuote(payload);
+    document.getElementById('distance').textContent = `${data.miles.toFixed(1)} mi`;
+    document.getElementById('eta').textContent = data.etaText;
+    document.getElementById('price').textContent = fmtGBP(data.total);
+    document.getElementById('payBtn').classList.remove('hide');
+
+    // Hook up Pay button once we have a valid quote
+    document.getElementById('payBtn').onclick = () => startCheckout(payload);
+  }catch(e){
+    console.error(e);
+    msg('Sorry, we could not calculate your route. Check postcodes and try again.');
+  }
+});
+</script>
+</body>
+</html>
