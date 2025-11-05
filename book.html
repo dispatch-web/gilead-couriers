@@ -17,14 +17,20 @@
     input,select,textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #2a3658;background:#0f1730;color:#e8eef7}
     .row-2{grid-column:span 2}
     .btn{background:var(--accent);color:#06122a;border:none;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
     .pill{display:inline-block;background:#1c2742;border:1px solid #2a3658;border-radius:999px;padding:6px 12px;font-size:12px;color:#cfd8e3;margin-right:8px}
     .notes{min-height:80px;resize:vertical}
     .right{justify-self:end}
-    .muted{color:var(--muted);font-size:13px}
-    .row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px}
+    .muted{color:#9fb0c9;font-size:13px}
     .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-    .price{font-size:22px;font-weight:800;margin:0;color:#fff}
+    .price{font-size:24px;font-weight:800;margin:0;color:#fff}
     .hide{display:none}
+    .fare{background:#0e1833;border:1px solid #213257;border-radius:12px;padding:16px;margin-top:12px}
+    .fare h3{margin:0 0 6px;font-size:18px}
+    .fare .big{font-size:28px;font-weight:900;margin:6px 0 2px}
+    .fare .meta{display:flex;gap:14px;flex-wrap:wrap;color:#cfd8e3}
+    .fare .reassure{margin-top:8px;color:#cfd8e3}
+    .ack{display:flex;align-items:flex-start;gap:10px;margin-top:12px}
     @media (max-width:720px){form{grid-template-columns:1fr}.row-2{grid-column:auto}}
   </style>
 </head>
@@ -32,7 +38,7 @@
   <div class="wrap">
     <div class="card">
       <h1>Book a Same-Day Courier</h1>
-      <p>Fixed £90 within 20 miles. £1.80+/mile thereafter. Out-of-hours & weekend surcharges apply automatically.</p>
+      <p>Fixed £90 within 20 miles. £1.80+/mile thereafter. Out-of-hours & weekend surcharges are included in your quote automatically.</p>
 
       <form id="bookingForm" autocomplete="on" novalidate>
         <div>
@@ -78,14 +84,6 @@
           <textarea id="notes" name="notes" class="notes" placeholder="Item details, access info, reference PO, etc."></textarea>
         </div>
 
-        <div class="row-2">
-          <div class="row">
-            <span class="pill">White-glove handling (optional)</span>
-            <span class="pill">Direct drive — no hub</span>
-            <span class="pill">Fully insured</span>
-          </div>
-        </div>
-
         <div class="grid-3 row-2">
           <div>
             <div class="muted">Distance</div>
@@ -96,15 +94,35 @@
             <div id="eta">–</div>
           </div>
           <div class="right">
-            <div class="muted">Estimated price</div>
+            <div class="muted">Estimated fare</div>
             <div id="price" class="price">–</div>
           </div>
         </div>
 
-        <div class="row-2">
-          <button class="btn" id="quoteBtn" type="button">Get live quote</button>
-          <button class="btn right hide" id="payBtn" type="button">Pay & confirm</button>
+        <!-- Premium-lite fare summary -->
+        <div id="fareCard" class="fare row-2 hide">
+          <h3>Fare estimate</h3>
+          <div id="fareTotal" class="big">–</div>
+          <div class="meta">
+            <span id="fareMiles">–</span>
+            <span>•</span>
+            <span id="fareEta">–</span>
+          </div>
+          <div class="reassure">
+            Includes mileage, service level and any applicable out-of-hours adjustments. <strong>Fixed once booked — no hidden charges.</strong>
+          </div>
+          <label class="ack">
+            <input type="checkbox" id="acceptFare" />
+            <span>I confirm the pickup and drop-off details are correct and I accept this fare.</span>
+          </label>
         </div>
+
+        <div class="row-2" style="display:flex;gap:10px;align-items:center">
+          <button class="btn" id="quoteBtn" type="button">Get live quote</button>
+          <button class="btn right" id="payBtn" type="button" disabled>Pay & confirm</button>
+          <span id="payHint" class="muted">Tick “I accept this fare” to enable payment.</span>
+        </div>
+
         <div class="row-2 muted" id="msg"></div>
       </form>
     </div>
@@ -112,7 +130,7 @@
 
 <script>
 const msg = (t)=>{document.getElementById('msg').textContent=t};
-const fmtGBP = v => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:2}).format(v);
+const GBP = v => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:2}).format(v);
 
 async function getQuote(payload){
   const r = await fetch('/api/checkout/create-session', {
@@ -152,16 +170,31 @@ document.getElementById('quoteBtn').addEventListener('click', async ()=>{
     return;
   }
 
+  // lock Pay until accepted
+  const payBtn = document.getElementById('payBtn');
+  const acceptFare = document.getElementById('acceptFare');
+  acceptFare.checked = false;
+  payBtn.disabled = true;
+
   try{
     const payload = { pickup, dropoff, pickupDate, pickupTime, name, email, phone, vehicle, notes };
     const data = await getQuote(payload);
+
+    // Top summary widgets
     document.getElementById('distance').textContent = `${data.miles.toFixed(1)} mi`;
     document.getElementById('eta').textContent = data.etaText;
-    document.getElementById('price').textContent = fmtGBP(data.total);
-    document.getElementById('payBtn').classList.remove('hide');
+    document.getElementById('price').textContent = GBP(data.total);
 
-    // Hook up Pay button once we have a valid quote
-    document.getElementById('payBtn').onclick = () => startCheckout(payload);
+    // Elite transparency block
+    document.getElementById('fareTotal').textContent = GBP(data.total);
+    document.getElementById('fareMiles').textContent = `${data.miles.toFixed(1)} miles`;
+    document.getElementById('fareEta').textContent = `ETA ${data.etaText}`;
+    document.getElementById('fareCard').classList.remove('hide');
+
+    // Enable Pay only after acceptance
+    acceptFare.onchange = () => { payBtn.disabled = !acceptFare.checked; };
+    payBtn.onclick = () => { if (acceptFare.checked) startCheckout(payload); };
+
   }catch(e){
     console.error(e);
     msg('Sorry, we could not calculate your route. Check postcodes and try again.');
