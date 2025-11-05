@@ -1,9 +1,8 @@
-// Serverless Stripe webhook + Telegram dispatch (CommonJS)
+// Serverless Stripe webhook + Telegram dispatch (CommonJS, Vercel-ready)
 const Stripe = require('stripe');
 const getRawBody = require('raw-body');
 
-// Use Node 18 global fetch for Telegram
-// Disable body parsing so we can verify Stripe signature
+// Ensure Vercel does NOT parse the body (we need raw bytes for Stripe signature)
 module.exports.config = { api: { bodyParser: false } };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -39,21 +38,21 @@ module.exports = async function (req, res) {
         const amount = ((session.amount_total ?? 0) / 100).toFixed(2);
         const currency = (session.currency || 'gbp').toUpperCase();
 
-        // Optional job details passed via Checkout metadata (we'll wire this later)
+        // Optional: these come from Checkout metadata (we’ll wire them later)
         const pickup = session.metadata?.pickup || 'N/A';
         const dropoff = session.metadata?.dropoff || 'N/A';
         const miles = session.metadata?.miles || 'N/A';
         const when = session.metadata?.when || 'N/A';
 
         const text =
-          `✅ *Booking Paid*\n\n` +
-          `• Amount: £${amount} ${currency}\n` +
-          `• Email: ${email}\n` +
-          `• Pickup: ${pickup}\n` +
-          `• Dropoff: ${dropoff}\n` +
-          `• Miles: ${miles}\n` +
-          `• When: ${when}\n` +
-          `• Session: ${session.id}`;
+`✅ Booking Paid
+Amount: £${amount} ${currency}
+Email: ${email}
+Pickup: ${pickup}
+Dropoff: ${dropoff}
+Miles: ${miles}
+When: ${when}
+Session: ${session.id}`;
 
         await notifyTelegram(text);
         break;
@@ -64,9 +63,9 @@ module.exports = async function (req, res) {
         const amount = ((pi.amount_received ?? pi.amount ?? 0) / 100).toFixed(2);
         const currency = (pi.currency || 'gbp').toUpperCase();
         const text =
-          `✅ *Payment Succeeded*\n\n` +
-          `• Amount: £${amount} ${currency}\n` +
-          `• PI: ${pi.id}`;
+`✅ Payment Succeeded
+Amount: £${amount} ${currency}
+PI: ${pi.id}`;
         await notifyTelegram(text);
         break;
       }
@@ -74,9 +73,9 @@ module.exports = async function (req, res) {
       case 'payment_intent.payment_failed': {
         const pi = event.data.object;
         const text =
-          `❌ *Payment Failed*\n\n` +
-          `• PI: ${pi.id}\n` +
-          `• Reason: ${pi.last_payment_error?.message || 'Unknown'}`;
+`❌ Payment Failed
+PI: ${pi.id}
+Reason: ${pi.last_payment_error?.message || 'Unknown'}`;
         await notifyTelegram(text);
         break;
       }
@@ -86,9 +85,9 @@ module.exports = async function (req, res) {
         const amount = ((charge.amount_refunded ?? 0) / 100).toFixed(2);
         const currency = (charge.currency || 'gbp').toUpperCase();
         const text =
-          `↩️ *Charge Refunded*\n\n` +
-          `• Amount: £${amount} ${currency}\n` +
-          `• Charge: ${charge.id}`;
+`↩️ Charge Refunded
+Amount: £${amount} ${currency}
+Charge: ${charge.id}`;
         await notifyTelegram(text);
         break;
       }
@@ -108,15 +107,25 @@ module.exports = async function (req, res) {
 async function notifyTelegram(text) {
   const bot = process.env.TELEGRAM_BOT_TOKEN;
   const chat = process.env.TELEGRAM_DISPATCH_CHAT_ID;
-  if (!bot || !chat) return;
+  if (!bot || !chat) {
+    console.warn('Telegram env vars missing; skipping notify.');
+    return;
+  }
 
-  await fetch(`https://api.telegram.org/bot${bot}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chat,
-      text,
-      parse_mode: 'Markdown'
-    }),
-  });
+  try {
+    const resp = await fetch(`https://api.telegram.org/bot${bot}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // Send as plain text to avoid Markdown parse errors
+      body: JSON.stringify({
+        chat_id: chat,
+        text: String(text),
+        disable_web_page_preview: true
+      }),
+    });
+    const data = await resp.text();
+    console.log('Telegram sendMessage status:', resp.status, 'body:', data);
+  } catch (e) {
+    console.error('Telegram sendMessage error:', e);
+  }
 }
