@@ -1,8 +1,122 @@
+// Serverless Stripe webhook + Telegram dispatch (CommonJS)
+const Stripe = require('stripe');
+const getRawBody = require('raw-body');
+
+// Use Node 18 global fetch for Telegram
+// Disable body parsing so we can verify Stripe signature
+module.exports.config = { api: { bodyParser: false } };
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2024-06-20',
+});
+
 module.exports = async function (req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).send('Method Not Allowed');
   }
-  // Minimal 200 to stop Stripe retries for now
-  return res.status(200).json({ received: true });
+
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+  try {
+    const buf = await getRawBody(req);
+    event = stripe.webhooks.constructEvent(buf, sig, endpointSecret);
+  } catch (err) {
+    console.error('Stripe signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        const email =
+          session.customer_details?.email ||
+          session.customer_email ||
+          'unknown';
+        const amount = ((session.amount_total ?? 0) / 100).toFixed(2);
+        const currency = (session.currency || 'gbp').toUpperCase();
+
+        // Optional job details passed via Checkout metadata (we'll wire this later)
+        const pickup = session.metadata?.pickup || 'N/A';
+        const dropoff = session.metadata?.dropoff || 'N/A';
+        const miles = session.metadata?.miles || 'N/A';
+        const when = session.metadata?.when || 'N/A';
+
+        const text =
+          `✅ *Booking Paid*\n\n` +
+          `• Amount: £${amount} ${currency}\n` +
+          `• Email: ${email}\n` +
+          `• Pickup: ${pickup}\n` +
+          `• Dropoff: ${dropoff}\n` +
+          `• Miles: ${miles}\n` +
+          `• When: ${when}\n` +
+          `• Session: ${session.id}`;
+
+        await notifyTelegram(text);
+        break;
+      }
+
+      case 'payment_intent.succeeded': {
+        const pi = event.data.object;
+        const amount = ((pi.amount_received ?? pi.amount ?? 0) / 100).toFixed(2);
+        const currency = (pi.currency || 'gbp').toUpperCase();
+        const text =
+          `✅ *Payment Succeeded*\n\n` +
+          `• Amount: £${amount} ${currency}\n` +
+          `• PI: ${pi.id}`;
+        await notifyTelegram(text);
+        break;
+      }
+
+      case 'payment_intent.payment_failed': {
+        const pi = event.data.object;
+        const text =
+          `❌ *Payment Failed*\n\n` +
+          `• PI: ${pi.id}\n` +
+          `• Reason: ${pi.last_payment_error?.message || 'Unknown'}`;
+        await notifyTelegram(text);
+        break;
+      }
+
+      case 'charge.refunded': {
+        const charge = event.data.object;
+        const amount = ((charge.amount_refunded ?? 0) / 100).toFixed(2);
+        const currency = (charge.currency || 'gbp').toUpperCase();
+        const text =
+          `↩️ *Charge Refunded*\n\n` +
+          `• Amount: £${amount} ${currency}\n` +
+          `• Charge: ${charge.id}`;
+        await notifyTelegram(text);
+        break;
+      }
+
+      default:
+        // Ignore other events for now
+        break;
+    }
+
+    return res.status(200).json({ received: true });
+  } catch (err) {
+    console.error('Webhook handler error:', err);
+    return res.status(500).send('Server error');
+  }
 };
+
+async function notifyTelegram(text) {
+  const bot = process.env.TELEGRAM_BOT_TOKEN;
+  const chat = process.env.TELEGRAM_DISPATCH_CHAT_ID;
+  if (!bot || !chat) return;
+
+  await fetch(`https://api.telegram.org/bot${bot}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chat,
+      text,
+      parse_mode: 'Markdown'
+    }),
+  });
+}
