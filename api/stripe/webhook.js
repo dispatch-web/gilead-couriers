@@ -1,13 +1,9 @@
-// Serverless Stripe webhook + Telegram dispatch (CommonJS, Vercel-ready)
 const Stripe = require('stripe');
 const getRawBody = require('raw-body');
 
-// Ensure Vercel does NOT parse the body (we need raw bytes for Stripe signature)
 module.exports.config = { api: { bodyParser: false } };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-06-20',
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
 
 module.exports = async function (req, res) {
   if (req.method !== 'POST') {
@@ -31,27 +27,33 @@ module.exports = async function (req, res) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object;
+
+        // Prefer session metadata; if missing, pull from PaymentIntent
+        let md = session.metadata || {};
+        if ((!md || Object.keys(md).length === 0) && session.payment_intent) {
+          try {
+            const pi = await stripe.paymentIntents.retrieve(session.payment_intent);
+            md = pi.metadata || {};
+          } catch (e) {
+            console.warn('Could not retrieve PI metadata', e?.message);
+          }
+        }
+
         const email =
           session.customer_details?.email ||
           session.customer_email ||
-          'unknown';
+          md.email || 'unknown';
         const amount = ((session.amount_total ?? 0) / 100).toFixed(2);
         const currency = (session.currency || 'gbp').toUpperCase();
-
-        // Optional: these come from Checkout metadata (we’ll wire them later)
-        const pickup = session.metadata?.pickup || 'N/A';
-        const dropoff = session.metadata?.dropoff || 'N/A';
-        const miles = session.metadata?.miles || 'N/A';
-        const when = session.metadata?.when || 'N/A';
 
         const text =
 `✅ Booking Paid
 Amount: £${amount} ${currency}
 Email: ${email}
-Pickup: ${pickup}
-Dropoff: ${dropoff}
-Miles: ${miles}
-When: ${when}
+Pickup: ${md.pickup || 'N/A'}
+Dropoff: ${md.dropoff || 'N/A'}
+Miles: ${md.miles || 'N/A'}
+When: ${md.when || 'N/A'}
 Session: ${session.id}`;
 
         await notifyTelegram(text);
@@ -60,12 +62,19 @@ Session: ${session.id}`;
 
       case 'payment_intent.succeeded': {
         const pi = event.data.object;
+        const md = pi.metadata || {};
         const amount = ((pi.amount_received ?? pi.amount ?? 0) / 100).toFixed(2);
         const currency = (pi.currency || 'gbp').toUpperCase();
+
         const text =
 `✅ Payment Succeeded
 Amount: £${amount} ${currency}
+Pickup: ${md.pickup || 'N/A'}
+Dropoff: ${md.dropoff || 'N/A'}
+Miles: ${md.miles || 'N/A'}
+When: ${md.when || 'N/A'}
 PI: ${pi.id}`;
+
         await notifyTelegram(text);
         break;
       }
@@ -93,7 +102,6 @@ Charge: ${charge.id}`;
       }
 
       default:
-        // Ignore other events for now
         break;
     }
 
@@ -116,7 +124,6 @@ async function notifyTelegram(text) {
     const resp = await fetch(`https://api.telegram.org/bot${bot}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // Send as plain text to avoid Markdown parse errors
       body: JSON.stringify({
         chat_id: chat,
         text: String(text),
