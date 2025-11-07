@@ -1,205 +1,166 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Book a Same-Day A-to-B Courier | Gilead Couriers</title>
-  <meta name="description" content="Discreet. Reliable. Elite. Book a same-day courier now."/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book a Courier | Gilead Courier Service</title>
   <style>
-    :root{--bg:#0b1220;--card:#121a2a;--muted:#9fb0c9;--text:#e8eef7;--accent:#4f8cff}
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
-    .wrap{max-width:960px;margin:0 auto;padding:24px}
-    .card{background:var(--card);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:20px}
-    h1{margin:8px 0 12px;font-size:26px}
-    p{color:#cfd8e3;margin:6px 0 18px}
-    form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    label{font-size:13px;color:var(--muted)}
-    input,select,textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #2a3658;background:#0f1730;color:#e8eef7}
-    .row-2{grid-column:span 2}
-    .btn{background:var(--accent);color:#06122a;border:none;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer}
-    .btn[disabled]{opacity:.5;cursor:not-allowed}
-    .pill{display:inline-block;background:#1c2742;border:1px solid #2a3658;border-radius:999px;padding:6px 12px;font-size:12px;color:#cfd8e3;margin-right:8px}
-    .notes{min-height:80px;resize:vertical}
-    .right{justify-self:end}
-    .muted{color:#9fb0c9;font-size:13px}
-    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-    .price{font-size:24px;font-weight:800;margin:0;color:#fff}
-    .hide{display:none}
-    .fare{background:#0e1833;border:1px solid #213257;border-radius:12px;padding:16px;margin-top:12px}
-    .fare h3{margin:0 0 6px;font-size:18px}
-    .fare .big{font-size:28px;font-weight:900;margin:6px 0 2px}
-    .fare .meta{display:flex;gap:14px;flex-wrap:wrap;color:#cfd8e3}
-    .fare .reassure{margin-top:8px;color:#cfd8e3}
-    .ack{display:flex;align-items:flex-start;gap:10px;margin-top:12px}
-    @media (max-width:720px){form{grid-template-columns:1fr}.row-2{grid-column:auto}}
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Helvetica, Arial, sans-serif;
+      margin: 0;
+      background: #0b1220;
+      color: #e8eef7;
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    h1 {
+      margin: 8px 0 24px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    input,
+    select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #2a344a;
+      background: #121a2a;
+      color: #e8eef7;
+      margin-bottom: 12px;
+    }
+    button {
+      background: #2b61ff;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    button:hover {
+      background: #1e48c2;
+    }
+    .fareCard {
+      background: #121a2a;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      margin-top: 20px;
+    }
+    .muted {
+      color: #cfd8e3;
+    }
+    a {
+      color: #8fb3ff;
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
-      <h1>Book a Same-Day Courier</h1>
-      <p>Fixed £90 within 20 miles. £1.80+/mile thereafter. Out-of-hours & weekend surcharges are included in your quote automatically.</p>
+    <h1>Book a Courier</h1>
 
-      <form id="bookingForm" autocomplete="on" novalidate>
-        <div>
-          <label>Pickup postcode</label>
-          <input id="pickup" name="pickup" placeholder="e.g. NG9 1AZ" required />
-        </div>
-        <div>
-          <label>Drop-off postcode</label>
-          <input id="dropoff" name="dropoff" placeholder="e.g. GL6 0RT" required />
-        </div>
+    <form id="bookingForm">
+      <label for="pickup">Pickup Address</label>
+      <input id="pickup" name="pickup" placeholder="Enter pickup postcode" required />
 
-        <div>
-          <label>Pickup date</label>
-          <input id="pickupDate" name="pickupDate" type="date" required />
-        </div>
-        <div>
-          <label>Pickup time</label>
-          <input id="pickupTime" name="pickupTime" type="time" required />
-        </div>
+      <label for="dropoff">Dropoff Address</label>
+      <input id="dropoff" name="dropoff" placeholder="Enter dropoff postcode" required />
 
-        <div>
-          <label>Your name</label>
-          <input id="name" name="name" placeholder="Full name" required />
-        </div>
-        <div>
-          <label>Contact email</label>
-          <input id="email" name="email" type="email" placeholder="you@company.com" required />
-        </div>
+      <label for="datetime">Preferred Collection Time</label>
+      <input id="datetime" name="datetime" type="datetime-local" required />
 
-        <div>
-          <label>Contact phone</label>
-          <input id="phone" name="phone" placeholder="+44..." />
-        </div>
-        <div>
-          <label>Vehicle</label>
-          <select id="vehicle" name="vehicle">
-            <option value="transit" selected>Ford Transit (MWB)</option>
-          </select>
-        </div>
+      <button type="button" id="calculateFare">Calculate Fare</button>
+    </form>
 
-        <div class="row-2">
-          <label>Notes (optional)</label>
-          <textarea id="notes" name="notes" class="notes" placeholder="Item details, access info, reference PO, etc."></textarea>
-        </div>
+    <div id="fareCard" class="fareCard" style="display:none;">
+      <h2>Fare Summary</h2>
+      <div id="fareDetails"></div>
 
-        <div class="grid-3 row-2">
-          <div>
-            <div class="muted">Distance</div>
-            <div id="distance">–</div>
-          </div>
-          <div>
-            <div class="muted">ETA (drive)</div>
-            <div id="eta">–</div>
-          </div>
-          <div class="right">
-            <div class="muted">Estimated fare</div>
-            <div id="price" class="price">–</div>
-          </div>
-        </div>
+      <div style="margin-top:12px;">
+        <label>
+          <input type="checkbox" id="acceptFare" /> I accept this fare and wish to proceed to payment
+        </label>
+      </div>
 
-        <!-- Premium-lite fare summary -->
-        <div id="fareCard" class="fare row-2 hide">
-          <h3>Fare estimate</h3>
-          <div id="fareTotal" class="big">–</div>
-          <div class="meta">
-            <span id="fareMiles">–</span>
-            <span>•</span>
-            <span id="fareEta">–</span>
-          </div>
-          <div class="reassure">
-            Includes mileage, service level and any applicable out-of-hours adjustments. <strong>Fixed once booked — no hidden charges.</strong>
-          </div>
-          <label class="ack">
-            <input type="checkbox" id="acceptFare" />
-            <span>I confirm the pickup and drop-off details are correct and I accept this fare.</span>
-          </label>
+      <!-- ✅ INSERTED SECTIONS BEGIN HERE -->
+      <div class="row-2" style="margin-top:8px">
+        <div class="muted" style="font-size:13px;line-height:1.4">
+          <strong>Refund Policy:</strong> Bookings are non-refundable once dispatch has been arranged. Refunds are only issued if Gilead Courier Service cannot complete a delivery due to our own error. External delays (traffic, weather, access) do not qualify. See our
+          <a href="/refund-policy.html">Refund &amp; Cancellation Policy</a>.
         </div>
+      </div>
 
-        <div class="row-2" style="display:flex;gap:10px;align-items:center">
-          <button class="btn" id="quoteBtn" type="button">Get live quote</button>
-          <button class="btn right" id="payBtn" type="button" disabled>Pay & confirm</button>
-          <span id="payHint" class="muted">Tick “I accept this fare” to enable payment.</span>
+      <div class="row-2" style="margin-top:6px">
+        <div class="muted" style="font-size:13px;line-height:1.4">
+          <strong>Agreement:</strong> By confirming your booking, you agree to our
+          <a href="/terms.html">Terms &amp; Conditions</a> and
+          <a href="/refund-policy.html">Refund &amp; Cancellation Policy</a>.
         </div>
+      </div>
+      <!-- ✅ INSERTED SECTIONS END HERE -->
 
-        <div class="row-2 muted" id="msg"></div>
-      </form>
+      <button type="button" id="proceedPayment">Proceed to Payment</button>
     </div>
   </div>
 
-<script>
-const msg = (t)=>{document.getElementById('msg').textContent=t};
-const GBP = v => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:2}).format(v);
+  <script>
+    const calculateFareBtn = document.getElementById('calculateFare');
+    const fareCard = document.getElementById('fareCard');
+    const fareDetails = document.getElementById('fareDetails');
+    const proceedPaymentBtn = document.getElementById('proceedPayment');
+    const acceptFareCheckbox = document.getElementById('acceptFare');
 
-async function getQuote(payload){
-  const r = await fetch('/api/checkout/create-session', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({...payload, mode:'quote'})
-  });
-  if(!r.ok){throw new Error('Quote failed');}
-  return r.json();
-}
+    calculateFareBtn.addEventListener('click', async () => {
+      const pickup = document.getElementById('pickup').value.trim();
+      const dropoff = document.getElementById('dropoff').value.trim();
+      if (!pickup || !dropoff) return alert('Enter both pickup and dropoff postcodes.');
 
-async function startCheckout(payload){
-  const r = await fetch('/api/checkout/create-session', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({...payload, mode:'checkout'})
-  });
-  if(!r.ok){throw new Error('Checkout create failed');}
-  const { url } = await r.json();
-  if(url) window.location.href = url;
-}
+      fareCard.style.display = 'block';
+      fareDetails.innerHTML = 'Calculating...';
 
-document.getElementById('quoteBtn').addEventListener('click', async ()=>{
-  msg('');
-  const pickup = document.getElementById('pickup').value.trim();
-  const dropoff = document.getElementById('dropoff').value.trim();
-  const pickupDate = document.getElementById('pickupDate').value;
-  const pickupTime = document.getElementById('pickupTime').value;
-  const name = document.getElementById('name').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const vehicle = document.getElementById('vehicle').value;
-  const notes = document.getElementById('notes').value.trim();
+      try {
+        const res = await fetch(`/api/fare?pickup=${encodeURIComponent(pickup)}&dropoff=${encodeURIComponent(dropoff)}`);
+        const data = await res.json();
+        fareDetails.innerHTML = `
+          <div>Distance: ${data.miles} miles</div>
+          <div>Estimated Duration: ${data.duration}</div>
+          <div>Fare: £${data.fare}</div>
+        `;
+      } catch (e) {
+        fareDetails.innerHTML = 'Error calculating fare.';
+      }
+    });
 
-  if(!pickup || !dropoff || !pickupDate || !pickupTime || !name || !email){
-    msg('Please fill all required fields.');
-    return;
-  }
+    proceedPaymentBtn.addEventListener('click', async () => {
+      if (!acceptFareCheckbox.checked) {
+        return alert('Please accept the fare before proceeding.');
+      }
 
-  // lock Pay until accepted
-  const payBtn = document.getElementById('payBtn');
-  const acceptFare = document.getElementById('acceptFare');
-  acceptFare.checked = false;
-  payBtn.disabled = true;
+      const pickup = document.getElementById('pickup').value.trim();
+      const dropoff = document.getElementById('dropoff').value.trim();
+      const datetime = document.getElementById('datetime').value;
 
-  try{
-    const payload = { pickup, dropoff, pickupDate, pickupTime, name, email, phone, vehicle, notes };
-    const data = await getQuote(payload);
-
-    // Top summary widgets
-    document.getElementById('distance').textContent = `${data.miles.toFixed(1)} mi`;
-    document.getElementById('eta').textContent = data.etaText;
-    document.getElementById('price').textContent = GBP(data.total);
-
-    // Elite transparency block
-    document.getElementById('fareTotal').textContent = GBP(data.total);
-    document.getElementById('fareMiles').textContent = `${data.miles.toFixed(1)} miles`;
-    document.getElementById('fareEta').textContent = `ETA ${data.etaText}`;
-    document.getElementById('fareCard').classList.remove('hide');
-
-    // Enable Pay only after acceptance
-    acceptFare.onchange = () => { payBtn.disabled = !acceptFare.checked; };
-    payBtn.onclick = () => { if (acceptFare.checked) startCheckout(payload); };
-
-  }catch(e){
-    console.error(e);
-    msg('Sorry, we could not calculate your route. Check postcodes and try again.');
-  }
-});
-</script>
+      try {
+        const res = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pickup, dropoff, datetime })
+        });
+        const data = await res.json();
+        if (data.url) window.location = data.url;
+        else alert('Payment session could not be created.');
+      } catch (e) {
+        alert('Error creating payment session.');
+      }
+    });
+  </script>
 </body>
 </html>
