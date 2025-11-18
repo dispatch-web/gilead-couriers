@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
 
-export const runtime = 'nodejs'; // ensure we use Node, not Edge
+export const runtime = 'nodejs'; // Ensure Node runtime, not edge
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2024-06-20',
@@ -23,7 +23,7 @@ async function sendTelegramMessage(text: string) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-    },
+      },
     body: JSON.stringify({
       chat_id: chatId,
       text,
@@ -50,13 +50,16 @@ export async function POST(req: Request) {
 
   const body = await req.text();
   let event: Stripe.Event;
+  let modeLabel = 'UNKNOWN';
 
   // Try LIVE secret first, then TEST secret
   try {
     event = stripe.webhooks.constructEvent(body, sig, liveSecret);
+    modeLabel = 'LIVE';
   } catch (errLive) {
     try {
       event = stripe.webhooks.constructEvent(body, sig, testSecret);
+      modeLabel = 'TEST';
     } catch (errTest) {
       console.error('Webhook verification failed for both LIVE and TEST secrets', {
         liveError: (errLive as Error).message,
@@ -65,9 +68,6 @@ export async function POST(req: Request) {
       return new Response('Webhook verification failed', { status: 400 });
     }
   }
-
-  // At this point, event is valid (either live or test)
-  const isLive = event.livemode === true;
 
   try {
     switch (event.type) {
@@ -80,8 +80,6 @@ export async function POST(req: Request) {
 
         const pickup = session.metadata?.pickup_address ?? 'Pickup address not provided';
         const dropoff = session.metadata?.dropoff_address ?? 'Drop-off address not provided';
-
-        const modeLabel = isLive ? 'LIVE' : 'TEST';
 
         const message = [
           `🚚 <b>Gilead Courier – New Job (${modeLabel})</b>`,
