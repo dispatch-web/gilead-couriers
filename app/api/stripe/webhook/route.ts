@@ -1,6 +1,13 @@
-export const runtime = 'nodejs'; // ensure Node runtime, not Edge
+import Stripe from 'stripe';
+import { headers } from 'next/headers';
 
-// Helper: send message to Telegram (optional)
+export const runtime = 'nodejs';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: '2024-06-20',
+});
+
+// Helper: send message to Telegram (but don't fail webhook if it breaks)
 async function sendTelegramMessage(text: string) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -12,34 +19,47 @@ async function sendTelegramMessage(text: string) {
 
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
 
-  await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      parse_mode: 'HTML',
-    }),
-  });
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML',
+      }),
+    });
+  } catch (err: any) {
+    console.error('Telegram send error:', err.message);
+  }
 }
 
 export async function POST(req: Request) {
-  let event: any;
-
-  try {
-    const bodyText = await req.text();
-    event = JSON.parse(bodyText);
-  } catch (err: any) {
-    console.error('Failed to parse JSON body:', err.message);
-    // Even if parsing fails, we don't want Stripe retry storms during testing
-    return new Response('Invalid JSON', { status: 200 });
+  const sig = headers().get('stripe-signature');
+  if (!sig) {
+    console.error('Missing stripe-signature header');
+    return new Response('Missing stripe-signature', { status: 400 });
   }
 
-  const modeLabel = event?.livemode ? 'LIVE' : 'TEST';
+  const secret = process.env.STRIPE_WEBHOOK_SECRET_TEST;
+  if (!secret) {
+    console.error('Missing STRIPE_WEBHOOK_SECRET_TEST env var');
+    return new Response('Server misconfigured', { status: 500 });
+  }
+
+  const body = await req.text();
+  let event: Stripe.Event;
 
   try {
-    if (event?.type === 'checkout.session.completed') {
-      const session = event.data?.object ?? {};
+    event = stripe.webhooks.constructEvent(body, sig, secret);
+  } catch (err: any) {
+    console.error('Test webhook verification failed:', err.message);
+    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+  }
+
+  try {
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
 
       const amount = (session.amount_total ?? 0) / 100;
       const currency = (session.currency ?? 'gbp').toUpperCase();
@@ -49,7 +69,7 @@ export async function POST(req: Request) {
       const dropoff = session.metadata?.dropoff_address ?? 'Drop-off address not provided';
 
       const message = [
-        `🚚 <b>Gilead Courier – New Job (${modeLabel})</b>`,
+        `🚚 <b>Gilead Courier – New Job (TEST)</b>`,
         '',
         `<b>Amount:</b> ${currency} ${amount.toFixed(2)}`,
         `<b>Customer:</b> ${customerEmail}`,
@@ -60,7 +80,7 @@ export async function POST(req: Request) {
 
       await sendTelegramMessage(message);
     } else {
-      console.log(`Received event type ${event?.type}, no Telegram logic attached.`);
+      console.log(`Received event type ${event.type} (no Telegram logic).`);
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -69,7 +89,6 @@ export async function POST(req: Request) {
     });
   } catch (err: any) {
     console.error('Error handling webhook event:', err.message);
-    // Still return 200 so Stripe doesn’t keep retrying while we debug
-    return new Response('OK', { status: 200 });
+    return new Response('Webhook handler error', { status: 500 });
   }
 }
