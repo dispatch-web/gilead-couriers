@@ -41,9 +41,9 @@ export async function POST(req: Request) {
     return new Response('Missing stripe-signature', { status: 400 });
   }
 
-  const secret = process.env.STRIPE_WEBHOOK_SECRET_TEST;
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) {
-    console.error('Missing STRIPE_WEBHOOK_SECRET_TEST env var');
+    console.error('Missing STRIPE_WEBHOOK_SECRET env var');
     return new Response('Server misconfigured', { status: 500 });
   }
 
