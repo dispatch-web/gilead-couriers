@@ -74,7 +74,7 @@ export async function POST(req: Request) {
       const jobRef = session.id ? session.id.slice(-8).toUpperCase() : 'UNKNOWN';
 
       const message = [
-        `🚚 <b>Gilead Courier – New Job (TEST)</b>`,
+        `🚚 <b>Gilead Courier – New Job (TEST V2)</b>`,
         `<b>Job ref:</b> ${jobRef}`,
         '',
         `<b>Amount:</b> ${currency} ${amount.toFixed(2)}`,
