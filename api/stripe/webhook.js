@@ -47,7 +47,6 @@ module.exports = async function (req, res) {
         const currency = (session.currency || 'gbp').toUpperCase();
 
         const text =
-`✅ Booking Paid
 Gilead Courier – NEW JOB (TEST) Amount: £${amount} ${currency} Customer: ${email} Pickup: ${md.pickup || 'N/A'} Dropoff: ${md.dropoff || 'N/A'} Miles: ${md.miles || 'N/A'} When: ${md.when || 'N/A'} Session: ${session.id};
 
         await notifyTelegram(text);
