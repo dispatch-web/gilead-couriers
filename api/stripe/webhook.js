@@ -12,14 +12,48 @@ module.exports = async function (req, res) {
   }
 
   const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  // Dual-secret: LIVE + TEST
+  const liveSecret = process.env.STRIPE_WEBHOOK_SECRET_LIVE;
+  const testSecret = process.env.STRIPE_WEBHOOK_SECRET; // TEST secret (existing)
+  if (!liveSecret && !testSecret) {
+    console.error('No webhook secrets configured');
+    return res.status(500).send('Server misconfigured');
+  }
 
   let event;
+  let modeLabel = 'UNKNOWN';
+
   try {
     const buf = await getRawBody(req);
-    event = stripe.webhooks.constructEvent(buf, sig, endpointSecret);
+
+    // Try LIVE first (if configured)
+    if (liveSecret) {
+      try {
+        event = stripe.webhooks.constructEvent(buf, sig, liveSecret);
+        modeLabel = 'LIVE';
+      } catch (errLive) {
+        console.warn('Live webhook verification failed, trying TEST...', errLive.message);
+      }
+    }
+
+    // If LIVE didn’t work, try TEST
+    if (!event && testSecret) {
+      try {
+        event = stripe.webhooks.constructEvent(buf, sig, testSecret);
+        modeLabel = 'TEST';
+      } catch (errTest) {
+        console.error('Test webhook verification failed:', errTest.message);
+        return res.status(400).send(`Webhook Error: ${errTest.message}`);
+      }
+    }
+
+    if (!event) {
+      console.error('Webhook could not be verified with any secret');
+      return res.status(400).send('Webhook Error: Unable to verify event');
+    }
   } catch (err) {
-    console.error('Stripe signature verification failed:', err.message);
+    console.error('Error reading raw body or verifying signature:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -50,7 +84,7 @@ module.exports = async function (req, res) {
         const jobRef = session.id ? session.id.slice(-8).toUpperCase() : 'UNKNOWN';
 
         const text =
-`🚚 GILEAD COURIER – NEW JOB (TEST)
+`🚚 GILEAD COURIER – NEW JOB (${modeLabel})
 Job ref: ${jobRef}
 
 Amount: £${amount} ${currency}
@@ -72,7 +106,7 @@ When: ${md.when || 'N/A'}`;
         const currency = (pi.currency || 'gbp').toUpperCase();
 
         const text =
-`🚚 GILEAD V3 – PAYMENT INTENT SUCCEEDED
+`🚚 GILEAD COURIER – PAYMENT INTENT SUCCEEDED (${modeLabel})
 Amount: £${amount} ${currency}
 Pickup: ${md.pickup || 'N/A'}
 Dropoff: ${md.dropoff || 'N/A'}
@@ -87,7 +121,7 @@ PI: ${pi.id}`;
       case 'payment_intent.payment_failed': {
         const pi = event.data.object;
         const text =
-`🚚 GILEAD V3 – PAYMENT INTENT FAILED
+`🚚 GILEAD COURIER – PAYMENT FAILED (${modeLabel})
 PI: ${pi.id}
 Reason: ${pi.last_payment_error?.message || 'Unknown'}`;
         await notifyTelegram(text);
@@ -99,7 +133,7 @@ Reason: ${pi.last_payment_error?.message || 'Unknown'}`;
         const amount = ((charge.amount_refunded ?? 0) / 100).toFixed(2);
         const currency = (charge.currency || 'gbp').toUpperCase();
         const text =
-`🚚 GILEAD V3 – CHARGE REFUNDED
+`🚚 GILEAD COURIER – CHARGE REFUNDED (${modeLabel})
 Amount: £${amount} ${currency}
 Charge: ${charge.id}`;
         await notifyTelegram(text);
