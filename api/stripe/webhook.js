@@ -60,13 +60,7 @@ module.exports = async function (req, res) {
         const currency = (pi.currency || 'gbp').toUpperCase();
 
         const text =
-`✅ Payment Succeeded
-Amount: £${amount} ${currency}
-Pickup: ${md.pickup || 'N/A'}
-Dropoff: ${md.dropoff || 'N/A'}
-Miles: ${md.miles || 'N/A'}
-When: ${md.when || 'N/A'}
-PI: ${pi.id}`;
+`Gilead Courier – NEW JOB (TEST) Amount: £${amount} ${currency} Customer: ${email} Pickup: ${md.pickup || 'N/A'} Dropoff: ${md.dropoff || 'N/A'} Miles: ${md.miles || 'N/A'} When: ${md.when || 'N/A'} Session: ${session.id};
 
         await notifyTelegram(text);
         break;
