@@ -46,8 +46,15 @@ module.exports = async function (req, res) {
         const amount = ((session.amount_total ?? 0) / 100).toFixed(2);
         const currency = (session.currency || 'gbp').toUpperCase();
 
-      const text =
-   `Gilead Courier – NEW JOB (TEST) Amount: £${amount} ${currency} Customer: ${email} Pickup: ${md.pickup || 'N/A'} Dropoff: ${md.dropoff || 'N/A'} Miles: ${md.miles || 'N/A'} When: ${md.when || 'N/A'} Session: ${session.id};
+        const text =
+`🚚 GILEAD V3 – CHECKOUT SESSION COMPLETED
+Amount: £${amount} ${currency}
+Customer: ${email}
+Pickup: ${md.pickup || 'N/A'}
+Dropoff: ${md.dropoff || 'N/A'}
+Miles: ${md.miles || 'N/A'}
+When: ${md.when || 'N/A'}
+Session: ${session.id}`;
 
         await notifyTelegram(text);
         break;
@@ -60,7 +67,13 @@ module.exports = async function (req, res) {
         const currency = (pi.currency || 'gbp').toUpperCase();
 
         const text =
-`Gilead Courier – NEW JOB (TEST) Amount: £${amount} ${currency} Customer: ${email} Pickup: ${md.pickup || 'N/A'} Dropoff: ${md.dropoff || 'N/A'} Miles: ${md.miles || 'N/A'} When: ${md.when || 'N/A'} Session: ${session.id};
+`🚚 GILEAD V3 – PAYMENT INTENT SUCCEEDED
+Amount: £${amount} ${currency}
+Pickup: ${md.pickup || 'N/A'}
+Dropoff: ${md.dropoff || 'N/A'}
+Miles: ${md.miles || 'N/A'}
+When: ${md.when || 'N/A'}
+PI: ${pi.id}`;
 
         await notifyTelegram(text);
         break;
@@ -69,7 +82,7 @@ module.exports = async function (req, res) {
       case 'payment_intent.payment_failed': {
         const pi = event.data.object;
         const text =
-`❌ Payment Failed
+`🚚 GILEAD V3 – PAYMENT INTENT FAILED
 PI: ${pi.id}
 Reason: ${pi.last_payment_error?.message || 'Unknown'}`;
         await notifyTelegram(text);
@@ -81,7 +94,7 @@ Reason: ${pi.last_payment_error?.message || 'Unknown'}`;
         const amount = ((charge.amount_refunded ?? 0) / 100).toFixed(2);
         const currency = (charge.currency || 'gbp').toUpperCase();
         const text =
-`↩️ Charge Refunded
+`🚚 GILEAD V3 – CHARGE REFUNDED
 Amount: £${amount} ${currency}
 Charge: ${charge.id}`;
         await notifyTelegram(text);
@@ -89,6 +102,7 @@ Charge: ${charge.id}`;
       }
 
       default:
+        console.log('Unhandled event type:', event.type);
         break;
     }
 
