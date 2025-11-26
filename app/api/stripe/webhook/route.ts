@@ -89,7 +89,7 @@ export async function POST(req: Request) {
       console.log(`Received event type ${event.type} (no Telegram logic).`);
     }
 
-    return new Response(JSON.stringify({ received: true }), {
+    return new Response(JSON.stringify({ gileadWebhook: 'TEST_V3_RESPONSE' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
