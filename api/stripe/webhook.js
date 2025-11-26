@@ -46,7 +46,15 @@ module.exports = async function (req, res) {
         const amount = ((session.amount_total ?? 0) / 100).toFixed(2);
         const currency = (session.currency || 'gbp').toUpperCase();
 
-      Gilead Courier – NEW JOB (TEST) Amount: £${amount} ${currency} Customer: ${email} Pickup: ${md.pickup || 'N/A'} Dropoff: ${md.dropoff || 'N/A'} Miles: ${md.miles || 'N/A'} When: ${md.when || 'N/A'} Session: ${session.id};
+      const text =
+   `✅ Booking Paid
+        Amount: £${amount} ${currency}
+        Email: ${email}
+        Pickup: ${md.pickup || 'N/A'}
+        Dropoff: ${md.dropoff || 'N/A'}
+        Miles: ${md.miles || 'N/A'}
+        When: ${md.when || 'N/A'}
+        Session: ${session.id}`;
 
         await notifyTelegram(text);
         break;
