@@ -42,19 +42,24 @@ module.exports = async function (req, res) {
         const email =
           session.customer_details?.email ||
           session.customer_email ||
-          md.email || 'unknown';
+          md.email ||
+          'unknown';
         const amount = ((session.amount_total ?? 0) / 100).toFixed(2);
         const currency = (session.currency || 'gbp').toUpperCase();
 
+        const jobRef = session.id ? session.id.slice(-8).toUpperCase() : 'UNKNOWN';
+
         const text =
-`🚚 GILEAD V3 – CHECKOUT SESSION COMPLETED
+`🚚 GILEAD COURIER – NEW JOB (TEST)
+Job ref: ${jobRef}
+
 Amount: £${amount} ${currency}
 Customer: ${email}
+
 Pickup: ${md.pickup || 'N/A'}
-Dropoff: ${md.dropoff || 'N/A'}
+Drop-off: ${md.dropoff || 'N/A'}
 Miles: ${md.miles || 'N/A'}
-When: ${md.when || 'N/A'}
-Session: ${session.id}`;
+When: ${md.when || 'N/A'}`;
 
         await notifyTelegram(text);
         break;
