@@ -1,6 +1,8 @@
 const Stripe = require('stripe');
 const getRawBody = require('raw-body');
 
+module.exports.config = { api: { bodyParser: false } };
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-06-20',
 });
@@ -36,7 +38,7 @@ module.exports = async function (req, res) {
       });
     }
 
-    // For now, keep this simple: flat £90 job price.
+    // Flat £90 for now
     const amountPence = 9000; // £90.00
 
     const session = await stripe.checkout.sessions.create({
