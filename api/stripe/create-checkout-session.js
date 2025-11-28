@@ -28,13 +28,14 @@ module.exports = async function (req, res) {
       pickup,
       dropoff,
       miles,
-      when,
+      whenDate,
+      whenTime,
       email,
     } = body || {};
 
-    if (!pickup || !dropoff || !email || !when) {
+    if (!pickup || !dropoff || !email || !whenDate || !whenTime) {
       return res.status(400).json({
-        error: 'Missing required fields: pickup, dropoff, when, email',
+        error: 'Missing required fields: pickup, dropoff, whenDate, whenTime, email',
       });
     }
 
@@ -62,7 +63,8 @@ module.exports = async function (req, res) {
         pickup,
         dropoff,
         miles: miles || '',
-        when: when || '',
+        when_date: whenDate,
+        when_time: whenTime,
         email,
       },
       success_url: 'https://www.gileadcouriers.co.uk/?status=success',
