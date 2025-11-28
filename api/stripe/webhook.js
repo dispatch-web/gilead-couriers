@@ -83,7 +83,9 @@ module.exports = async function (req, res) {
 
         const jobRef = session.id ? session.id.slice(-8).toUpperCase() : 'UNKNOWN';
 
-        // Handle both new and any legacy "when" metadata
+        // Version & date/time
+        const version = md._version || 'unknown';
+
         const whenDate = md.when_date || md.whenDate || '';
         const whenTime = md.when_time || md.whenTime || '';
         let whenLine = 'When: N/A';
@@ -102,6 +104,7 @@ module.exports = async function (req, res) {
         const text =
 `🚚 GILEAD COURIER – NEW JOB (${modeLabel})
 Job ref: ${jobRef}
+Version: ${version}
 
 Amount Paid: £${amount} ${currency}
 Calculated Price: £${md.calculated_price || amount}
