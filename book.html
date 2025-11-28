@@ -65,6 +65,13 @@
       color: #6b7280;
       margin-top: 2px;
     }
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+    .row .field {
+      flex: 1;
+    }
     .error {
       margin-top: 12px;
       font-size: 0.85rem;
@@ -133,15 +140,17 @@
         <div class="helper">If you know the approximate distance, enter it here. Otherwise you can leave this blank.</div>
       </div>
 
-      <div class="field">
-        <label for="when">When is this job needed? *</label>
-        <input
-          id="when"
-          name="when"
-          type="text"
-          required
-          placeholder="e.g. Today 3pm, Tomorrow morning, Specific date/time"
-        />
+      <div class="row">
+        <div class="field">
+          <label for="whenDate">Job date *</label>
+          <input id="whenDate" name="whenDate" type="date" required />
+          <div class="helper">Date the job needs to be completed.</div>
+        </div>
+        <div class="field">
+          <label for="whenTime">Time needed by *</label>
+          <input id="whenTime" name="whenTime" type="time" required />
+          <div class="helper">Time the job must be delivered by.</div>
+        </div>
       </div>
 
       <div class="field">
@@ -182,10 +191,11 @@
       const pickup = document.getElementById('pickup').value.trim();
       const dropoff = document.getElementById('dropoff').value.trim();
       const miles = document.getElementById('miles').value.trim();
-      const when = document.getElementById('when').value.trim();
+      const whenDate = document.getElementById('whenDate').value;
+      const whenTime = document.getElementById('whenTime').value;
       const email = document.getElementById('email').value.trim();
 
-      if (!pickup || !dropoff || !when || !email) {
+      if (!pickup || !dropoff || !whenDate || !whenTime || !email) {
         errorDiv.textContent = 'Please fill in all required fields.';
         errorDiv.style.display = 'block';
         return;
@@ -204,7 +214,8 @@
             pickup,
             dropoff,
             miles,
-            when,
+            whenDate,
+            whenTime,
             email
           })
         });
