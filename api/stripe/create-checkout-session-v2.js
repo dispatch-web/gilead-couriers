@@ -7,10 +7,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-06-20',
 });
 
-// TEMP DEBUG PRICING
-// - If miles > 20 => charge exactly £123
-// - Else => charge exactly £90
-// This makes it crystal clear whether this v2 endpoint is being used.
+// HARD DEBUG VERSION:
+// - Ignores miles completely
+// - Always charges exactly £123
+// This is just to prove this endpoint is actually being used from /book.html
 
 module.exports = async function (req, res) {
   if (req.method !== 'POST') {
@@ -44,22 +44,14 @@ module.exports = async function (req, res) {
       });
     }
 
-    // Convert miles to number (0 if blank)
-    const milesNum = miles ? parseFloat(miles) : 0;
-
-    let finalPrice;
-    if (!Number.isNaN(milesNum) && milesNum > 20) {
-      finalPrice = 123; // clearly not £90, so we can see it
-    } else {
-      finalPrice = 90;
-    }
-
+    // DEBUG: force price to £123 no matter what
+    const finalPrice = 123;
     const amountPence = Math.round(finalPrice * 100);
 
-    console.log('GILEAD V2 DEBUG pricing:', {
+    console.log('GILEAD V2 HARDCODED DEBUG pricing:', {
       pickup,
       dropoff,
-      miles: milesNum,
+      miles,
       finalPrice,
       amountPence,
     });
@@ -74,7 +66,7 @@ module.exports = async function (req, res) {
             currency: 'gbp',
             unit_amount: amountPence,
             product_data: {
-              name: `Gilead Courier Job – V2 DEBUG £${finalPrice.toFixed(2)}`,
+              name: `Gilead Courier Job – DEBUG £${finalPrice.toFixed(2)}`,
               description: `Pickup: ${pickup} → Drop-off: ${dropoff}`,
             },
           },
