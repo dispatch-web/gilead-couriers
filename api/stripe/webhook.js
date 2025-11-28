@@ -103,7 +103,9 @@ module.exports = async function (req, res) {
 `🚚 GILEAD COURIER – NEW JOB (${modeLabel})
 Job ref: ${jobRef}
 
-Amount: £${amount} ${currency}
+Amount Paid: £${amount} ${currency}
+Calculated Price: £${md.calculated_price || amount}
+
 Customer: ${email}
 
 Pickup: ${md.pickup || 'N/A'}
