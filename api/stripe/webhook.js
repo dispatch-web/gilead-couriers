@@ -83,6 +83,22 @@ module.exports = async function (req, res) {
 
         const jobRef = session.id ? session.id.slice(-8).toUpperCase() : 'UNKNOWN';
 
+        // Handle both new and any legacy "when" metadata
+        const whenDate = md.when_date || md.whenDate || '';
+        const whenTime = md.when_time || md.whenTime || '';
+        let whenLine = 'When: N/A';
+        if (whenDate || whenTime) {
+          if (whenDate && whenTime) {
+            whenLine = `When: ${whenDate} at ${whenTime}`;
+          } else if (whenDate) {
+            whenLine = `When: ${whenDate}`;
+          } else if (whenTime) {
+            whenLine = `When: ${whenTime}`;
+          }
+        } else if (md.when) {
+          whenLine = `When: ${md.when}`;
+        }
+
         const text =
 `🚚 GILEAD COURIER – NEW JOB (${modeLabel})
 Job ref: ${jobRef}
@@ -93,7 +109,7 @@ Customer: ${email}
 Pickup: ${md.pickup || 'N/A'}
 Drop-off: ${md.dropoff || 'N/A'}
 Miles: ${md.miles || 'N/A'}
-When: ${md.when || 'N/A'}`;
+${whenLine}`;
 
         await notifyTelegram(text);
         break;
