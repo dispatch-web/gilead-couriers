@@ -7,21 +7,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-06-20',
 });
 
-// Pricing constants
-const BASE_DISTANCE = 20;        // first 20 miles
-const BASE_PRICE = 90;           // £90 base
-const PER_MILE_RATE = 1.80;      // £1.80 per mile beyond 20 miles
-
-// Rounds price to nearest £5 or £10 depending on amount
-function roundPrice(value) {
-  if (value < 100) {
-    // Round to nearest £5 for normal jobs
-    return Math.round(value / 5) * 5;
-  } else {
-    // Round to nearest £10 for larger jobs
-    return Math.round(value / 10) * 10;
-  }
-}
+// TEMP DEBUG PRICING
+// - If miles > 20 => charge exactly £123
+// - Else => charge exactly £90
+// This makes it crystal clear whether this v2 endpoint is being used.
 
 module.exports = async function (req, res) {
   if (req.method !== 'POST') {
@@ -57,21 +46,20 @@ module.exports = async function (req, res) {
 
     // Convert miles to number (0 if blank)
     const milesNum = miles ? parseFloat(miles) : 0;
-    let rawPrice = BASE_PRICE;
 
-    if (!Number.isNaN(milesNum) && milesNum > BASE_DISTANCE) {
-      const extraMiles = milesNum - BASE_DISTANCE;
-      rawPrice += extraMiles * PER_MILE_RATE;
+    let finalPrice;
+    if (!Number.isNaN(milesNum) && milesNum > 20) {
+      finalPrice = 123; // clearly not £90, so we can see it
+    } else {
+      finalPrice = 90;
     }
 
-    const finalPrice = roundPrice(rawPrice);
     const amountPence = Math.round(finalPrice * 100);
 
-    console.log('GILEAD V2 pricing:', {
+    console.log('GILEAD V2 DEBUG pricing:', {
       pickup,
       dropoff,
       miles: milesNum,
-      rawPrice,
       finalPrice,
       amountPence,
     });
@@ -86,7 +74,7 @@ module.exports = async function (req, res) {
             currency: 'gbp',
             unit_amount: amountPence,
             product_data: {
-              name: `Gilead Courier Job – £${finalPrice.toFixed(2)}`,
+              name: `Gilead Courier Job – V2 DEBUG £${finalPrice.toFixed(2)}`,
               description: `Pickup: ${pickup} → Drop-off: ${dropoff}`,
             },
           },
@@ -94,6 +82,7 @@ module.exports = async function (req, res) {
         },
       ],
       metadata: {
+        _version: 'v2',
         pickup,
         dropoff,
         miles: miles || '',
