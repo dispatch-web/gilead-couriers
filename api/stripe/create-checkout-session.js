@@ -32,9 +32,10 @@ module.exports = async function (req, res) {
   let body;
   try {
     const raw = await getRawBody(req);
-    body = JSON.parse(raw.toString('utf8') || '{}');
+    const text = raw.toString('utf8') || '{}';
+    body = JSON.parse(text);
   } catch (err) {
-    console.error('Failed to parse JSON:', err.message);
+    console.error('Failed to parse request body in create-checkout-session:', err.message);
     return res.status(400).json({ error: 'Invalid request body' });
   }
 
@@ -46,7 +47,7 @@ module.exports = async function (req, res) {
       whenDate,
       whenTime,
       email,
-    } = body;
+    } = body || {};
 
     if (!pickup || !dropoff || !email || !whenDate || !whenTime) {
       return res.status(400).json({
@@ -54,11 +55,11 @@ module.exports = async function (req, res) {
       });
     }
 
-    // Convert miles to number
+    // Convert miles to number (0 if blank)
     const milesNum = miles ? parseFloat(miles) : 0;
     let rawPrice = BASE_PRICE;
 
-    if (milesNum > BASE_DISTANCE) {
+    if (!Number.isNaN(milesNum) && milesNum > BASE_DISTANCE) {
       const extraMiles = milesNum - BASE_DISTANCE;
       rawPrice += extraMiles * PER_MILE_RATE;
     }
@@ -66,7 +67,15 @@ module.exports = async function (req, res) {
     const finalPrice = roundPrice(rawPrice);
     const amountPence = Math.round(finalPrice * 100);
 
-    // Create checkout session
+    console.log('GILEAD pricing:', {
+      pickup,
+      dropoff,
+      miles: milesNum,
+      rawPrice,
+      finalPrice,
+      amountPence,
+    });
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
@@ -99,7 +108,7 @@ module.exports = async function (req, res) {
 
     return res.status(200).json({ url: session.url });
   } catch (err) {
-    console.error('Error creating session:', err);
+    console.error('Error creating checkout session:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
