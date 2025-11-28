@@ -119,8 +119,7 @@
   <div class="page">
     <h1>Book a Courier Job</h1>
     <p class="subtitle">
-      Fixed price of <strong>£90</strong> for jobs within 20 miles. 
-      You will be taken to our secure payment page after submitting your booking.
+      Fixed price from <strong>£90</strong>. Final price is based on distance and shown on the secure payment page.
     </p>
 
     <form id="booking-form">
@@ -167,7 +166,7 @@
 
       <div class="button-row">
         <button type="submit" id="submit-btn">
-          <span>Book &amp; Pay £90</span>
+          <span>Book &amp; Pay</span>
         </button>
         <span class="pill">Secure card payment via Stripe</span>
       </div>
@@ -205,7 +204,7 @@
       submitBtn.textContent = 'Redirecting to secure payment...';
 
       try {
-        const response = await fetch('/api/stripe/create-checkout-session', {
+        const response = await fetch('/api/stripe/create-checkout-session-v2', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -237,7 +236,7 @@
         errorDiv.textContent = err.message || 'Something went wrong. Please try again.';
         errorDiv.style.display = 'block';
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Book & Pay £90';
+        submitBtn.textContent = 'Book & Pay';
       }
     });
   </script>
