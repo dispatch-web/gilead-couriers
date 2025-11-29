@@ -119,7 +119,8 @@
   <div class="page">
     <h1>Book a Courier Job</h1>
     <p class="subtitle">
-      Fixed price from <strong>£90</strong>. Final price is based on distance and shown on the secure payment page.
+      Pricing starts from <strong>£90</strong> for jobs within 20 miles. 
+      Longer distances are priced based on miles and shown on the secure payment page.
     </p>
 
     <form id="booking-form">
@@ -134,9 +135,19 @@
       </div>
 
       <div class="field">
-        <label for="miles">Estimated distance (miles)</label>
-        <input id="miles" name="miles" type="number" min="1" step="0.1" placeholder="Optional" />
-        <div class="helper">If you know the approximate distance, enter it here. Otherwise you can leave this blank.</div>
+        <label for="miles">Estimated distance (miles) *</label>
+        <input
+          id="miles"
+          name="miles"
+          type="number"
+          min="1"
+          step="0.1"
+          required
+          placeholder="e.g. 12, 25, 100"
+        />
+        <div class="helper">
+          This is used to calculate your price. For jobs within 20 miles the price is £90. Beyond 20 miles, extra per-mile charges apply.
+        </div>
       </div>
 
       <div class="row">
@@ -189,16 +200,18 @@
 
       const pickup = document.getElementById('pickup').value.trim();
       const dropoff = document.getElementById('dropoff').value.trim();
-      const miles = document.getElementById('miles').value.trim();
+      const milesValue = document.getElementById('miles').value;
       const whenDate = document.getElementById('whenDate').value;
       const whenTime = document.getElementById('whenTime').value;
       const email = document.getElementById('email').value.trim();
 
-      if (!pickup || !dropoff || !whenDate || !whenTime || !email) {
-        errorDiv.textContent = 'Please fill in all required fields.';
+      if (!pickup || !dropoff || !milesValue || !whenDate || !whenTime || !email) {
+        errorDiv.textContent = 'Please fill in all required fields, including miles.';
         errorDiv.style.display = 'block';
         return;
       }
+
+      const miles = milesValue.trim();
 
       submitBtn.disabled = true;
       submitBtn.textContent = 'Redirecting to secure payment...';
