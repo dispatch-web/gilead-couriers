@@ -7,10 +7,24 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-06-20',
 });
 
-// HARD DEBUG VERSION:
-// - Ignores miles completely
-// - Always charges exactly £123
-// This is just to prove this endpoint is actually being used from /book.html
+// REAL PRICING LOGIC
+// - First 20 miles: £90 flat
+// - Beyond 20 miles: £90 + £1.80 per extra mile
+// - Then rounded to nearest £5 (under £100) or nearest £10 (>= £100)
+
+const BASE_DISTANCE = 20;       // first 20 miles
+const BASE_PRICE = 90;          // £90 base
+const PER_MILE_RATE = 1.80;     // £1.80 per mile beyond 20 miles
+
+function roundPrice(value) {
+  if (value < 100) {
+    // Round to nearest £5 for normal jobs
+    return Math.round(value / 5) * 5;
+  } else {
+    // Round to nearest £10 for larger jobs
+    return Math.round(value / 10) * 10;
+  }
+}
 
 module.exports = async function (req, res) {
   if (req.method !== 'POST') {
@@ -44,14 +58,24 @@ module.exports = async function (req, res) {
       });
     }
 
-    // DEBUG: force price to £123 no matter what
-    const finalPrice = 123;
+    // Convert miles to number (0 if blank)
+    const milesNum = miles ? parseFloat(miles) : 0;
+
+    let rawPrice = BASE_PRICE;
+
+    if (!Number.isNaN(milesNum) && milesNum > BASE_DISTANCE) {
+      const extraMiles = milesNum - BASE_DISTANCE;
+      rawPrice += extraMiles * PER_MILE_RATE;
+    }
+
+    const finalPrice = roundPrice(rawPrice);
     const amountPence = Math.round(finalPrice * 100);
 
-    console.log('GILEAD V2 HARDCODED DEBUG pricing:', {
+    console.log('GILEAD V2 REAL pricing:', {
       pickup,
       dropoff,
-      miles,
+      miles: milesNum,
+      rawPrice,
       finalPrice,
       amountPence,
     });
@@ -66,7 +90,7 @@ module.exports = async function (req, res) {
             currency: 'gbp',
             unit_amount: amountPence,
             product_data: {
-              name: `Gilead Courier Job – DEBUG £${finalPrice.toFixed(2)}`,
+              name: `Gilead Courier Job – £${finalPrice.toFixed(2)}`,
               description: `Pickup: ${pickup} → Drop-off: ${dropoff}`,
             },
           },
