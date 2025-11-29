@@ -120,47 +120,6 @@ ${whenLine}`;
         break;
       }
 
-      case 'payment_intent.succeeded': {
-        const pi = event.data.object;
-        const md = pi.metadata || {};
-        const amount = ((pi.amount_received ?? pi.amount ?? 0) / 100).toFixed(2);
-        const currency = (pi.currency || 'gbp').toUpperCase();
-
-        const text =
-`🚚 GILEAD COURIER – PAYMENT INTENT SUCCEEDED (${modeLabel})
-Amount: £${amount} ${currency}
-Pickup: ${md.pickup || 'N/A'}
-Dropoff: ${md.dropoff || 'N/A'}
-Miles: ${md.miles || 'N/A'}
-When: ${md.when || 'N/A'}
-PI: ${pi.id}`;
-
-        await notifyTelegram(text);
-        break;
-      }
-
-      case 'payment_intent.payment_failed': {
-        const pi = event.data.object;
-        const text =
-`🚚 GILEAD COURIER – PAYMENT FAILED (${modeLabel})
-PI: ${pi.id}
-Reason: ${pi.last_payment_error?.message || 'Unknown'}`;
-        await notifyTelegram(text);
-        break;
-      }
-
-      case 'charge.refunded': {
-        const charge = event.data.object;
-        const amount = ((charge.amount_refunded ?? 0) / 100).toFixed(2);
-        const currency = (charge.currency || 'gbp').toUpperCase();
-        const text =
-`🚚 GILEAD COURIER – CHARGE REFUNDED (${modeLabel})
-Amount: £${amount} ${currency}
-Charge: ${charge.id}`;
-        await notifyTelegram(text);
-        break;
-      }
-
       default:
         console.log('Unhandled event type:', event.type);
         break;
