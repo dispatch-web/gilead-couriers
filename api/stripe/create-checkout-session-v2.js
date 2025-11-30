@@ -7,8 +7,24 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-06-20',
 });
 
-// TEMPORARY LIVE TEST VERSION — EVERYTHING IS £1.00
-// After test, we will revert to full pricing formula.
+// REAL PRICING LOGIC (LIVE + TEST)
+// - First 20 miles: £90 flat
+// - Beyond 20 miles: £90 + £1.80 per extra mile
+// - Then rounded to nearest £5 (under £100) or nearest £10 (>= £100)
+
+const BASE_DISTANCE = 20;       // first 20 miles
+const BASE_PRICE = 90;          // £90 base
+const PER_MILE_RATE = 1.80;     // £1.80 per mile beyond 20 miles
+
+function roundPrice(value) {
+  if (value < 100) {
+    // Round to nearest £5 for normal jobs
+    return Math.round(value / 5) * 5;
+  } else {
+    // Round to nearest £10 for larger jobs
+    return Math.round(value / 10) * 10;
+  }
+}
 
 module.exports = async function (req, res) {
   if (req.method !== 'POST') {
@@ -22,7 +38,7 @@ module.exports = async function (req, res) {
     const text = raw.toString('utf8') || '{}';
     body = JSON.parse(text);
   } catch (err) {
-    console.error('Failed to parse request body:', err.message);
+    console.error('Failed to parse request body in create-checkout-session-v2:', err.message);
     return res.status(400).json({ error: 'Invalid request body' });
   }
 
@@ -42,11 +58,27 @@ module.exports = async function (req, res) {
       });
     }
 
-    // Hard-coded £1 test price
-    const finalPrice = 1;
-    const amountPence = 100;
+    // Convert miles to number (0 if blank)
+    const milesNum = miles ? parseFloat(miles) : 0;
 
-    console.log('⚠️ LIVE TEST MODE — forcing £1 price for this checkout');
+    let rawPrice = BASE_PRICE;
+
+    if (!Number.isNaN(milesNum) && milesNum > BASE_DISTANCE) {
+      const extraMiles = milesNum - BASE_DISTANCE;
+      rawPrice += extraMiles * PER_MILE_RATE;
+    }
+
+    const finalPrice = roundPrice(rawPrice);
+    const amountPence = Math.round(finalPrice * 100);
+
+    console.log('GILEAD V2 REAL pricing (LIVE):', {
+      pickup,
+      dropoff,
+      miles: milesNum,
+      rawPrice,
+      finalPrice,
+      amountPence,
+    });
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -58,7 +90,7 @@ module.exports = async function (req, res) {
             currency: 'gbp',
             unit_amount: amountPence,
             product_data: {
-              name: `Gilead Courier Job – TEST £1`,
+              name: `Gilead Courier Job – £${finalPrice.toFixed(2)}`,
               description: `Pickup: ${pickup} → Drop-off: ${dropoff}`,
             },
           },
@@ -81,7 +113,7 @@ module.exports = async function (req, res) {
 
     return res.status(200).json({ url: session.url });
   } catch (err) {
-    console.error('Error creating checkout session (LIVE £1 test):', err);
+    console.error('Error creating checkout session (v2):', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
