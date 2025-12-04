@@ -3,9 +3,11 @@ const getRawBody = require('raw-body');
 
 module.exports.config = { api: { bodyParser: false } };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2024-06-20',
+});
 
-// OPTIONAL: later we can move this URL into an env var if you like
+// 🔗 Make.com webhook URL (already created)
 const MAKE_WEBHOOK_URL = 'https://hook.eu1.make.com/rnr8xtmiefpm7bmxohb21o676b9dbupe';
 
 module.exports = async function (req, res) {
@@ -16,7 +18,6 @@ module.exports = async function (req, res) {
 
   const sig = req.headers['stripe-signature'];
 
-  // Dual-secret: LIVE + TEST
   const liveSecret = process.env.STRIPE_WEBHOOK_SECRET_LIVE;
   const testSecret = process.env.STRIPE_WEBHOOK_SECRET; // TEST secret
   if (!liveSecret && !testSecret) {
@@ -40,7 +41,7 @@ module.exports = async function (req, res) {
       }
     }
 
-    // If LIVE didn’t work, try TEST
+    // Then TEST
     if (!event && testSecret) {
       try {
         event = stripe.webhooks.constructEvent(buf, sig, testSecret);
@@ -81,13 +82,15 @@ module.exports = async function (req, res) {
           session.customer_email ||
           md.email ||
           'unknown';
-        const amount = ((session.amount_total ?? 0) / 100).toFixed(2);
+
+        const amountNum = (session.amount_total ?? 0) / 100;
+        const amountStr = amountNum.toFixed(2);
         const currency = (session.currency || 'gbp').toUpperCase();
 
         const jobRef = session.id ? session.id.slice(-8).toUpperCase() : 'UNKNOWN';
-
         const version = md._version || 'v2';
 
+        // When fields
         const whenDate = md.when_date || md.whenDate || '';
         const whenTime = md.when_time || md.whenTime || '';
         let whenLine = 'When: N/A';
@@ -103,44 +106,76 @@ module.exports = async function (req, res) {
           whenLine = `When: ${md.when}`;
         }
 
+        // Miles
+        const milesStr = md.miles || '';
+        const milesNum = milesStr ? parseFloat(milesStr) : 0;
+
+        // 🕒 Compute start/end times (simple model: 30mph + 30min buffer)
+        let startDateTimeIso = null;
+        let endDateTimeIso = null;
+        try {
+          if (whenDate && whenTime) {
+            // Treat as local date/time; store as ISO
+            const end = new Date(`${whenDate}T${whenTime}:00`);
+            let travelMinutes = 60; // default 1h
+            if (!Number.isNaN(milesNum) && milesNum > 0) {
+              const hours = milesNum / 30; // 30 mph average
+              travelMinutes = Math.round(hours * 60) + 30; // add 30min buffer
+            }
+            const start = new Date(end.getTime() - travelMinutes * 60000);
+            startDateTimeIso = start.toISOString();
+            endDateTimeIso = end.toISOString();
+          }
+        } catch (e) {
+          console.warn('Could not compute start/end times', e?.message);
+        }
+
         const text =
 `🚚 GILEAD COURIER – NEW JOB (${modeLabel})
 Job ref: ${jobRef}
 Version: ${version}
 
-Amount Paid: £${amount} ${currency}
-Calculated Price: £${md.calculated_price || amount}
+Amount Paid: £${amountStr} ${currency}
+Calculated Price: £${md.calculated_price || amountStr}
 
 Customer: ${email}
 
 Pickup: ${md.pickup || 'N/A'}
 Drop-off: ${md.dropoff || 'N/A'}
-Miles: ${md.miles || 'N/A'}
+Miles: ${milesStr || 'N/A'}
 ${whenLine}`;
 
-        // 1) Notify Telegram (as before)
         await notifyTelegram(text);
 
-        // 2) Notify Make.com with structured job data for Airtable
-        const jobPayload = {
-          eventType: event.type,
-          mode: modeLabel,
-          version,
-          sessionId: session.id,
-          jobRef,
-          amountPaid: Number(amount),
-          currency,
-          calculatedPrice: md.calculated_price ? Number(md.calculated_price) : Number(amount),
-          pickup: md.pickup || null,
-          dropoff: md.dropoff || null,
-          miles: md.miles || null,
-          whenDate: whenDate || null,
-          whenTime: whenTime || null,
-          email,
-          createdAt: new Date().toISOString(),
-        };
+        // 📤 Send to Make → Airtable
+        try {
+          if (MAKE_WEBHOOK_URL) {
+            const payload = {
+              jobId: jobRef,
+              stripeSessionId: session.id,
+              mode: modeLabel,
+              status: 'Paid',
+              email,
+              amount: amountNum,
+              currency,
+              pickup: md.pickup || '',
+              dropoff: md.dropoff || '',
+              miles: milesStr,
+              whenDate,
+              whenTime,
+              startDateTime: startDateTimeIso,
+              endDateTime: endDateTimeIso,
+            };
 
-        await notifyMake(jobPayload);
+            await fetch(MAKE_WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+          }
+        } catch (e) {
+          console.error('Error posting to Make webhook:', e);
+        }
 
         break;
       }
@@ -172,31 +207,12 @@ async function notifyTelegram(text) {
       body: JSON.stringify({
         chat_id: chat,
         text: String(text),
-        disable_web_page_preview: true
+        disable_web_page_preview: true,
       }),
     });
     const data = await resp.text();
     console.log('Telegram sendMessage status:', resp.status, 'body:', data);
   } catch (e) {
     console.error('Telegram sendMessage error:', e);
-  }
-}
-
-async function notifyMake(payload) {
-  if (!MAKE_WEBHOOK_URL) {
-    console.warn('MAKE_WEBHOOK_URL not configured; skipping Make notification.');
-    return;
-  }
-
-  try {
-    const resp = await fetch(MAKE_WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const text = await resp.text();
-    console.log('Make.com webhook status:', resp.status, 'body:', text);
-  } catch (e) {
-    console.error('Make.com webhook error:', e);
   }
 }
