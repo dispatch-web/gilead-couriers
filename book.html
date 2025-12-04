@@ -119,7 +119,7 @@
   <div class="page">
     <h1>Book a Courier Job</h1>
     <p class="subtitle">
-      Pricing starts from <strong>£90</strong> for jobs within 20 miles. 
+      Pricing starts from <strong>£90</strong> for jobs within 20 miles.
       Longer distances are priced based on miles and shown on the secure payment page.
     </p>
 
@@ -214,22 +214,68 @@
       const miles = milesValue.trim();
 
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Redirecting to secure payment...';
+      submitBtn.textContent = 'Checking availability...';
+
+      const payload = {
+        pickup,
+        dropoff,
+        miles,
+        whenDate,
+        whenTime,
+        email,
+      };
 
       try {
+        // 1) Check availability first
+        const availRes = await fetch('/api/availability/check-slot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!availRes.ok) {
+          const data = await availRes.json().catch(() => ({}));
+          const msg = data && data.error ? data.error : 'Unable to check availability at the moment.';
+          throw new Error(msg);
+        }
+
+        const availData = await availRes.json();
+
+        if (!availData.available) {
+          // Slot not available – show message and stop
+          let message = availData.message || 'That time is no longer available.';
+
+          if (Array.isArray(availData.suggestions) && availData.suggestions.length > 0) {
+            const lines = availData.suggestions.map((s) => {
+              if (s.start && s.end) {
+                return `- ${s.start} to ${s.end}`;
+              }
+              if (s.start) return `- Starting at ${s.start}`;
+              return '';
+            }).filter(Boolean);
+
+            if (lines.length > 0) {
+              message += ' Available times on your chosen day:\n' + lines.join('\n');
+            }
+          }
+
+          errorDiv.textContent = message;
+          errorDiv.style.whiteSpace = 'pre-line';
+          errorDiv.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Book & Pay';
+          return;
+        }
+
+        // 2) If available, create Stripe checkout session
+        submitBtn.textContent = 'Redirecting to secure payment...';
+
         const response = await fetch('/api/stripe/create-checkout-session-v2', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            pickup,
-            dropoff,
-            miles,
-            whenDate,
-            whenTime,
-            email
-          })
+          body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
