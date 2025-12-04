@@ -5,6 +5,9 @@ module.exports.config = { api: { bodyParser: false } };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
 
+// OPTIONAL: later we can move this URL into an env var if you like
+const MAKE_WEBHOOK_URL = 'https://hook.eu1.make.com/rnr8xtmiefpm7bmxohb21o676b9dbupe';
+
 module.exports = async function (req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -15,7 +18,7 @@ module.exports = async function (req, res) {
 
   // Dual-secret: LIVE + TEST
   const liveSecret = process.env.STRIPE_WEBHOOK_SECRET_LIVE;
-  const testSecret = process.env.STRIPE_WEBHOOK_SECRET; // TEST secret (existing)
+  const testSecret = process.env.STRIPE_WEBHOOK_SECRET; // TEST secret
   if (!liveSecret && !testSecret) {
     console.error('No webhook secrets configured');
     return res.status(500).send('Server misconfigured');
@@ -27,7 +30,7 @@ module.exports = async function (req, res) {
   try {
     const buf = await getRawBody(req);
 
-    // Try LIVE first (if configured)
+    // Try LIVE first
     if (liveSecret) {
       try {
         event = stripe.webhooks.constructEvent(buf, sig, liveSecret);
@@ -83,8 +86,7 @@ module.exports = async function (req, res) {
 
         const jobRef = session.id ? session.id.slice(-8).toUpperCase() : 'UNKNOWN';
 
-        // Version & date/time
-        const version = md._version || 'unknown';
+        const version = md._version || 'v2';
 
         const whenDate = md.when_date || md.whenDate || '';
         const whenTime = md.when_time || md.whenTime || '';
@@ -116,7 +118,30 @@ Drop-off: ${md.dropoff || 'N/A'}
 Miles: ${md.miles || 'N/A'}
 ${whenLine}`;
 
+        // 1) Notify Telegram (as before)
         await notifyTelegram(text);
+
+        // 2) Notify Make.com with structured job data for Airtable
+        const jobPayload = {
+          eventType: event.type,
+          mode: modeLabel,
+          version,
+          sessionId: session.id,
+          jobRef,
+          amountPaid: Number(amount),
+          currency,
+          calculatedPrice: md.calculated_price ? Number(md.calculated_price) : Number(amount),
+          pickup: md.pickup || null,
+          dropoff: md.dropoff || null,
+          miles: md.miles || null,
+          whenDate: whenDate || null,
+          whenTime: whenTime || null,
+          email,
+          createdAt: new Date().toISOString(),
+        };
+
+        await notifyMake(jobPayload);
+
         break;
       }
 
@@ -154,5 +179,24 @@ async function notifyTelegram(text) {
     console.log('Telegram sendMessage status:', resp.status, 'body:', data);
   } catch (e) {
     console.error('Telegram sendMessage error:', e);
+  }
+}
+
+async function notifyMake(payload) {
+  if (!MAKE_WEBHOOK_URL) {
+    console.warn('MAKE_WEBHOOK_URL not configured; skipping Make notification.');
+    return;
+  }
+
+  try {
+    const resp = await fetch(MAKE_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const text = await resp.text();
+    console.log('Make.com webhook status:', resp.status, 'body:', text);
+  } catch (e) {
+    console.error('Make.com webhook error:', e);
   }
 }
