@@ -70,10 +70,18 @@ module.exports = async function (req, res) {
     email,
   } = body || {};
 
-  if (!pickup || !dropoff || !whenDate || !whenTime || !email) {
+  // Work out which fields look "missing"
+  const missing = [];
+  if (!pickup) missing.push('pickup');
+  if (!dropoff) missing.push('dropoff');
+  if (!whenDate) missing.push('whenDate');
+  if (!whenTime) missing.push('whenTime');
+  // email is useful, but not required for availability check itself
+
+  if (missing.length > 0) {
     return res.status(400).json({
       available: false,
-      message: 'Missing required fields to check availability.',
+      message: `Missing required fields to check availability: ${missing.join(', ')}`,
     });
   }
 
@@ -85,14 +93,12 @@ module.exports = async function (req, res) {
     miles: miles || '',
     whenDate,
     whenTime,
-    email,
+    email: email || '',
     scheduleStart: start,
     scheduleEnd: end,
-    // add more fields if your Make scenario expects them
   };
 
   try {
-    // Use the global fetch provided by the runtime (no node-fetch import)
     const makeResp = await fetch(MAKE_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
