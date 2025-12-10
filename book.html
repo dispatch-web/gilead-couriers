@@ -146,8 +146,7 @@
           placeholder="e.g. 12, 25, 100"
         />
         <div class="helper">
-          This is used to calculate your price. For jobs within 20 miles the price is £90.
-          Beyond 20 miles, extra per-mile charges apply.
+          This is used to calculate your price. For jobs within 20 miles the price is £90. Beyond 20 miles, extra per-mile charges apply.
         </div>
       </div>
 
@@ -217,36 +216,38 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Checking availability...';
 
+      const payload = {
+        pickup,
+        dropoff,
+        miles,
+        whenDate,
+        whenTime,
+        email
+      };
+
       try {
-        // 1) Check availability first
-        const availabilityRes = await fetch('/api/availability', {
+        // 1) Check availability via server-side API (which calls Make)
+        const availabilityResponse = await fetch('/api/availability', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            pickup,
-            dropoff,
-            miles,
-            whenDate,
-            whenTime
-          })
+          body: JSON.stringify(payload)
         });
 
-        if (!availabilityRes.ok) {
-          const data = await availabilityRes.json().catch(() => ({}));
+        if (!availabilityResponse.ok) {
+          const data = await availabilityResponse.json().catch(() => ({}));
           const msg = data && data.message
             ? data.message
-            : 'We could not check availability. Please try again.';
+            : 'Unable to check availability. Please try again.';
           throw new Error(msg);
         }
 
-        const availabilityData = await availabilityRes.json();
+        const availabilityData = await availabilityResponse.json();
 
         if (!availabilityData.available) {
-          // Slot NOT available – show message and stop
-          const msg =
-            availabilityData.message ||
+          // Slot not available – show message from server/Make
+          const msg = availabilityData.message ||
             'That time slot is no longer available. Please choose a different time.';
           errorDiv.textContent = msg;
           errorDiv.style.display = 'block';
@@ -255,35 +256,28 @@
           return;
         }
 
-        // 2) If slot is available, create Stripe checkout session
+        // 2) Slot OK – create Stripe Checkout session using existing v2 endpoint
         submitBtn.textContent = 'Redirecting to secure payment...';
 
-        const response = await fetch('/api/stripe/create-checkout-session-v2', {
+        const checkoutResponse = await fetch('/api/stripe/create-checkout-session-v2', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            pickup,
-            dropoff,
-            miles,
-            whenDate,
-            whenTime,
-            email
-          })
+          body: JSON.stringify(payload)
         });
 
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
+        if (!checkoutResponse.ok) {
+          const data = await checkoutResponse.json().catch(() => ({}));
           const msg = data && data.error
             ? data.error
             : 'Unable to create checkout session.';
           throw new Error(msg);
         }
 
-        const data = await response.json();
-        if (data && data.url) {
-          window.location.href = data.url;
+        const checkoutData = await checkoutResponse.json();
+        if (checkoutData && checkoutData.url) {
+          window.location.href = checkoutData.url;
         } else {
           throw new Error('Payment link was not returned.');
         }
