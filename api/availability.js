@@ -1,20 +1,20 @@
 const getRawBody = require('raw-body');
-const fetch = require('node-fetch'); // Vercel supports this in Node18; if not, global fetch is available
 
 module.exports.config = { api: { bodyParser: false } };
 
-// Make.com webhook URL stored as env var in Vercel
-// e.g. AVAILABILITY_WEBHOOK_URL = https://hook.eu1.make.com/xxxx
-const MAKE_WEBHOOK_URL = process.env.AVAILABILITY_WEBHOOK_URL;
+// Prefer MAKE_AVAILABILITY_WEBHOOK_URL (what you already created in Vercel),
+// but also allow AVAILABILITY_WEBHOOK_URL as a fallback.
+const MAKE_WEBHOOK_URL =
+  process.env.MAKE_AVAILABILITY_WEBHOOK_URL || process.env.AVAILABILITY_WEBHOOK_URL;
 
 if (!MAKE_WEBHOOK_URL) {
-  console.warn('AVAILABILITY_WEBHOOK_URL is not set. /api/availability will fail until it is configured.');
+  console.warn(
+    'No availability webhook URL set. Set MAKE_AVAILABILITY_WEBHOOK_URL or AVAILABILITY_WEBHOOK_URL in Vercel.'
+  );
 }
 
+// Simple helper: estimate start/end of the job window from miles + requested end time
 function computeScheduleWindow(whenDate, whenTime, miles) {
-  // Very simple estimate:
-  // - job "ends" at the requested time
-  // - job "starts" earlier based on travel time + buffer
   const milesNum = miles ? parseFloat(miles) : 0;
 
   const end = new Date(`${whenDate}T${whenTime || '00:00'}:00`);
@@ -23,7 +23,7 @@ function computeScheduleWindow(whenDate, whenTime, miles) {
   }
 
   const speedMph = 30; // assumed average
-  const travelHours = milesNum > 0 ? milesNum / speedMph : 1; // fallback 1h
+  const travelHours = milesNum > 0 ? milesNum / speedMph : 1; // default 1h
   const travelMinutes = travelHours * 60;
   const bufferMinutes = 30; // loading/unloading buffer
   const totalMinutes = travelMinutes + bufferMinutes;
@@ -88,10 +88,11 @@ module.exports = async function (req, res) {
     email,
     scheduleStart: start,
     scheduleEnd: end,
-    // you can add more fields here if your Make scenario expects them
+    // add more fields if your Make scenario expects them
   };
 
   try {
+    // Use the global fetch provided by the runtime (no node-fetch import)
     const makeResp = await fetch(MAKE_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -110,7 +111,7 @@ module.exports = async function (req, res) {
       });
     }
 
-    // Expecting something like { available: true } or { available: false, message: '...' }
+    // We expect { available: true } or { available: false, message: '...' }
     if (typeof data.available !== 'boolean') {
       console.warn('Make response missing "available" flag:', data);
       return res.status(502).json({
