@@ -111,10 +111,18 @@ module.exports = async function (req, res) {
       data = JSON.parse(text);
     } catch (e) {
       console.error('Non-JSON response from Make availability webhook:', text);
-      // TEMPORARY: surface the raw response so we can see what Make returned
+
+      // If Make returns its default "Accepted" text, treat this as "available: true"
+      if (text && text.trim() === 'Accepted') {
+        return res.status(200).json({
+          available: true,
+        });
+      }
+
+      // Anything else non-JSON we still treat as an error
       return res.status(502).json({
         available: false,
-        message: `Raw Make response: ${text}`,
+        message: 'Unexpected response from scheduling system. Please try again.',
       });
     }
 
