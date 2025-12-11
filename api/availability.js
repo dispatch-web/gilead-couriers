@@ -76,7 +76,7 @@ module.exports = async function (req, res) {
   if (!dropoff) missing.push('dropoff');
   if (!whenDate) missing.push('whenDate');
   if (!whenTime) missing.push('whenTime');
-  // email is useful, but not required for availability check itself
+  // email is useful, but not required for availability
 
   if (missing.length > 0) {
     return res.status(400).json({
@@ -111,9 +111,10 @@ module.exports = async function (req, res) {
       data = JSON.parse(text);
     } catch (e) {
       console.error('Non-JSON response from Make availability webhook:', text);
+      // TEMPORARY: surface the raw response so we can see what Make returned
       return res.status(502).json({
         available: false,
-        message: 'Unexpected response from scheduling system. Please try again.',
+        message: `Raw Make response: ${text}`,
       });
     }
 
