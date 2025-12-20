@@ -1,294 +1,229 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Book a Courier Job | Gilead Courier Service</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f5f5f7;
-      color: #111827;
-    }
-    .page {
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 24px 16px 40px;
-    }
-    h1 {
-      font-size: 1.6rem;
-      margin-bottom: 0.25rem;
-    }
-    p.subtitle {
-      margin-top: 0;
-      color: #4b5563;
-      font-size: 0.95rem;
-    }
-    form {
-      margin-top: 24px;
-      background: #ffffff;
-      border-radius: 12px;
-      padding: 20px 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
-    }
-    .field {
-      margin-bottom: 14px;
-    }
-    label {
-      display: block;
-      font-size: 0.9rem;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    input, textarea {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 9px 10px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      font-size: 0.95rem;
-      outline: none;
-      font-family: inherit;
-    }
-    input:focus, textarea:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
-    }
-    textarea {
-      resize: vertical;
-      min-height: 60px;
-    }
-    .helper {
-      font-size: 0.8rem;
-      color: #6b7280;
-      margin-top: 2px;
-    }
-    .row {
-      display: flex;
-      gap: 10px;
-    }
-    .row .field {
-      flex: 1;
-    }
-    .error {
-      margin-top: 12px;
-      font-size: 0.85rem;
-      color: #b91c1c;
-    }
-    .success {
-      margin-top: 12px;
-      font-size: 0.85rem;
-      color: #15803d;
-    }
-    .button-row {
-      margin-top: 18px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    button {
-      background: #111827;
-      color: white;
-      border: none;
-      border-radius: 999px;
-      padding: 10px 20px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    button:disabled {
-      opacity: 0.6;
-      cursor: default;
-    }
-    .pill {
-      background: #e5e7eb;
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      color: #4b5563;
-    }
-  </style>
-</head>
-<body>
-  <div class="page">
-    <h1>Book a Courier Job</h1>
-    <p class="subtitle">
-      Pricing starts from <strong>£90</strong> for jobs within 20 miles.
-      Longer distances are priced based on miles and shown on the secure payment page.
-    </p>
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Gilead Couriers — Book a Job</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 24px; background: #f6f7fb; color:#111; }
+      .wrap { max-width: 760px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.06); }
+      h1 { margin: 0 0 8px; font-size: 24px; }
+      p.sub { margin: 0 0 20px; color:#444; }
+      label { display:block; font-weight:600; margin: 14px 0 6px; }
+      input, textarea, select { width:100%; box-sizing:border-box; padding: 10px 12px; border: 1px solid #d7dbe7; border-radius: 10px; font-size: 14px; }
+      textarea { min-height: 76px; resize: vertical; }
+      .row { display:flex; gap: 12px; }
+      .row > div { flex:1; }
+      .hint { font-size: 12px; color:#666; margin-top: 6px; }
+      .btn { margin-top: 18px; width:100%; padding: 12px 14px; border:0; border-radius: 12px; font-weight:700; cursor:pointer; background:#111; color:#fff; font-size: 15px; }
+      .btn[disabled]{ opacity:.6; cursor:not-allowed; }
+      .msg { margin-top: 14px; padding: 12px; border-radius: 10px; display:none; }
+      .msg.ok { background:#e9f8ef; color:#0f5132; border:1px solid #b7ebc6; }
+      .msg.err { background:#fdecec; color:#842029; border:1px solid #f5c2c7; }
+      .small { font-size: 12px; color:#666; margin-top: 10px; }
+      .footer { margin-top: 14px; font-size: 12px; color:#666; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Book a courier job</h1>
+      <p class="sub">Fixed fee within 20 miles. Long-distance is priced by mileage + rules. Secure payment via Stripe.</p>
 
-    <form id="booking-form">
-      <div class="field">
+      <form id="bookingForm">
         <label for="pickup">Pickup address *</label>
-        <textarea id="pickup" name="pickup" required placeholder="House number, street, town, postcode"></textarea>
-      </div>
+        <textarea id="pickup" name="pickup" required placeholder="e.g. 10 Downing Street, London SW1A 2AA"></textarea>
 
-      <div class="field">
         <label for="dropoff">Drop-off address *</label>
-        <textarea id="dropoff" name="dropoff" required placeholder="House number, street, town, postcode"></textarea>
-      </div>
+        <textarea id="dropoff" name="dropoff" required placeholder="e.g. 1 St Peter’s Square, Manchester M2 3AE"></textarea>
 
-      <div class="field">
-        <label for="miles">Estimated distance (miles) *</label>
-        <input
-          id="miles"
-          name="miles"
-          type="number"
-          min="1"
-          step="0.1"
-          required
-          placeholder="e.g. 12, 25, 100"
-        />
-        <div class="helper">
-          This is used to calculate your price. For jobs within 20 miles the price is £90. Beyond 20 miles, extra per-mile charges apply.
+        <div class="row">
+          <div>
+            <label for="miles">Estimated miles *</label>
+            <input id="miles" name="miles" type="number" min="1" step="1" required placeholder="e.g. 234" />
+            <div class="hint">Enter an approximate mileage for now (routing automation comes later).</div>
+          </div>
+          <div>
+            <label for="email">Your email address *</label>
+            <input id="email" name="email" type="email" required placeholder="you@example.com" />
+          </div>
         </div>
-      </div>
 
-      <div class="row">
-        <div class="field">
-          <label for="whenDate">Job date *</label>
-          <input id="whenDate" name="whenDate" type="date" required />
-          <div class="helper">Date the job needs to be completed.</div>
+        <div class="row">
+          <div>
+            <label for="whenDate">When is this job needed? (date) *</label>
+            <input id="whenDate" name="whenDate" type="date" required />
+          </div>
+          <div>
+            <label for="whenTime">Time needed by *</label>
+            <input id="whenTime" name="whenTime" type="time" required />
+          </div>
         </div>
-        <div class="field">
-          <label for="whenTime">Time needed by *</label>
-          <input id="whenTime" name="whenTime" type="time" required />
-          <div class="helper">Time the job must be delivered by.</div>
+
+        <label for="notes">Notes (optional)</label>
+        <textarea id="notes" name="notes" placeholder="Fragile items, access instructions, parking, contact name, etc."></textarea>
+
+        <button class="btn" id="payBtn" type="submit">Book &amp; Pay</button>
+
+        <div id="msgOk" class="msg ok"></div>
+        <div id="msgErr" class="msg err"></div>
+
+        <div class="footer">
+          By proceeding you agree to our terms and policies.
         </div>
-      </div>
+      </form>
+    </div>
 
-      <div class="field">
-        <label for="email">Your email address *</label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          placeholder="you@example.com"
-        />
-        <div class="helper">We’ll send your payment confirmation and job reference to this email.</div>
-      </div>
+    <script>
+      (function () {
+        const form = document.getElementById('bookingForm');
+        const payBtn = document.getElementById('payBtn');
+        const msgOk = document.getElementById('msgOk');
+        const msgErr = document.getElementById('msgErr');
 
-      <div class="button-row">
-        <button type="submit" id="submit-btn">
-          <span>Book &amp; Pay</span>
-        </button>
-        <span class="pill">Secure card payment via Stripe</span>
-      </div>
+        function showOk(text) {
+          msgOk.textContent = text;
+          msgOk.style.display = 'block';
+          msgErr.style.display = 'none';
+        }
 
-      <div id="form-error" class="error" style="display:none;"></div>
-      <div id="form-success" class="success" style="display:none;"></div>
-    </form>
-  </div>
+        function showErr(text) {
+          msgErr.textContent = text;
+          msgErr.style.display = 'block';
+          msgOk.style.display = 'none';
+        }
 
-  <script>
-    const form = document.getElementById('booking-form');
-    const submitBtn = document.getElementById('submit-btn');
-    const errorDiv = document.getElementById('form-error');
-    const successDiv = document.getElementById('form-success');
+        function setBusy(isBusy) {
+          payBtn.disabled = isBusy;
+          payBtn.textContent = isBusy ? 'Checking availability…' : 'Book & Pay';
+        }
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorDiv.style.display = 'none';
-      successDiv.style.display = 'none';
+        function getValue(id) {
+          const el = document.getElementById(id);
+          return (el && typeof el.value === 'string') ? el.value.trim() : '';
+        }
 
-      const pickup = document.getElementById('pickup').value.trim();
-      const dropoff = document.getElementById('dropoff').value.trim();
-      const milesValue = document.getElementById('miles').value;
-      const whenDate = document.getElementById('whenDate').value;
-      const whenTime = document.getElementById('whenTime').value;
-      const email = document.getElementById('email').value.trim();
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
 
-      if (!pickup || !dropoff || !milesValue || !whenDate || !whenTime || !email) {
-        errorDiv.textContent = 'Please fill in all required fields, including miles.';
-        errorDiv.style.display = 'block';
-        return;
-      }
+          // Clear messages
+          msgOk.style.display = 'none';
+          msgErr.style.display = 'none';
 
-      const miles = milesValue.trim();
+          const pickup = getValue('pickup');
+          const dropoff = getValue('dropoff');
+          const miles = getValue('miles');
+          const email = getValue('email');
+          const whenDate = getValue('whenDate');
+          const whenTime = getValue('whenTime');
+          const notes = getValue('notes');
 
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Checking availability...';
+          // Basic front-end validation
+          if (!pickup || !dropoff || !miles || !email || !whenDate || !whenTime) {
+            showErr('Please complete all required fields.');
+            return;
+          }
 
-      const payload = {
-        pickup,
-        dropoff,
-        miles,
-        whenDate,
-        whenTime,
-        email
-      };
+          const milesNum = Number(miles);
+          if (!Number.isFinite(milesNum) || milesNum <= 0) {
+            showErr('Please enter a valid mileage value.');
+            return;
+          }
 
-      try {
-        // 1) Check availability via server-side API (which calls Make)
-        const availabilityResponse = await fetch('/api/availability', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
+          setBusy(true);
+
+          try {
+            // 1) Check availability (server-side calls Make; avoids CSP issues)
+            const availabilityResp = await fetch('/api/availability', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                pickup,
+                dropoff,
+                miles: String(milesNum),
+                email,
+                whenDate,
+                whenTime
+              })
+            });
+
+            const availabilityText = await availabilityResp.text();
+            let availability;
+            try {
+              availability = JSON.parse(availabilityText);
+            } catch (err) {
+              setBusy(false);
+              showErr('We could not check availability. Please try again.');
+              return;
+            }
+
+            if (!availabilityResp.ok) {
+              setBusy(false);
+              showErr(availability.message || 'We could not check availability. Please try again.');
+              return;
+            }
+
+            if (!availability.available) {
+              setBusy(false);
+
+              // NEW: show suggested time if provided by Make
+              let msg = availability.message || 'That time slot is no longer available. Please choose a different time.';
+              if (availability.suggestedTime) {
+                msg += '\n\nSuggested alternative:\n' + availability.suggestedTime;
+              }
+
+              // Keep using alert for simplicity/consistency with your current build
+              alert(msg);
+              return;
+            }
+
+            // 2) Create Stripe checkout session (v2 route)
+            payBtn.textContent = 'Creating checkout session…';
+
+            const checkoutResp = await fetch('/api/stripe/create-checkout-session-v2', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                pickup,
+                dropoff,
+                miles: String(milesNum),
+                email,
+                whenDate,
+                whenTime,
+                notes
+              })
+            });
+
+            const checkoutText = await checkoutResp.text();
+            let checkout;
+            try {
+              checkout = JSON.parse(checkoutText);
+            } catch (err) {
+              setBusy(false);
+              showErr('Unable to create checkout session. Please try again.');
+              return;
+            }
+
+            if (!checkoutResp.ok) {
+              setBusy(false);
+              showErr(checkout.error || 'Unable to create checkout session. Please try again.');
+              return;
+            }
+
+            if (!checkout.url) {
+              setBusy(false);
+              showErr('Checkout session created but no URL was returned. Please try again.');
+              return;
+            }
+
+            // Redirect to Stripe Checkout
+            window.location.href = checkout.url;
+          } catch (err) {
+            console.error(err);
+            setBusy(false);
+            showErr('Unexpected error. Please try again.');
+          }
         });
-
-        if (!availabilityResponse.ok) {
-          const data = await availabilityResponse.json().catch(() => ({}));
-          const msg = data && data.message
-            ? data.message
-            : 'Unable to check availability. Please try again.';
-          throw new Error(msg);
-        }
-
-        const availabilityData = await availabilityResponse.json();
-
-        if (!availabilityData.available) {
-          // Slot not available – show message from server/Make
-          const msg = availabilityData.message ||
-            'That time slot is no longer available. Please choose a different time.';
-          errorDiv.textContent = msg;
-          errorDiv.style.display = 'block';
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Book & Pay';
-          return;
-        }
-
-        // 2) Slot OK – create Stripe Checkout session using existing v2 endpoint
-        submitBtn.textContent = 'Redirecting to secure payment...';
-
-        const checkoutResponse = await fetch('/api/stripe/create-checkout-session-v2', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!checkoutResponse.ok) {
-          const data = await checkoutResponse.json().catch(() => ({}));
-          const msg = data && data.error
-            ? data.error
-            : 'Unable to create checkout session.';
-          throw new Error(msg);
-        }
-
-        const checkoutData = await checkoutResponse.json();
-        if (checkoutData && checkoutData.url) {
-          window.location.href = checkoutData.url;
-        } else {
-          throw new Error('Payment link was not returned.');
-        }
-      } catch (err) {
-        console.error(err);
-        errorDiv.textContent = err.message || 'Something went wrong. Please try again.';
-        errorDiv.style.display = 'block';
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Book & Pay';
-      }
-    });
-  </script>
-</body>
+      })();
+    </script>
+  </body>
 </html>
