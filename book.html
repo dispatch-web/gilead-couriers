@@ -10,7 +10,7 @@
       h1 { margin: 0 0 8px; font-size: 24px; }
       p.sub { margin: 0 0 20px; color:#444; }
       label { display:block; font-weight:600; margin: 14px 0 6px; }
-      input, textarea, select { width:100%; box-sizing:border-box; padding: 10px 12px; border: 1px solid #d7dbe7; border-radius: 10px; font-size: 14px; }
+      input, textarea { width:100%; box-sizing:border-box; padding: 10px 12px; border: 1px solid #d7dbe7; border-radius: 10px; font-size: 14px; }
       textarea { min-height: 76px; resize: vertical; }
       .row { display:flex; gap: 12px; }
       .row > div { flex:1; }
@@ -20,7 +20,6 @@
       .msg { margin-top: 14px; padding: 12px; border-radius: 10px; display:none; }
       .msg.ok { background:#e9f8ef; color:#0f5132; border:1px solid #b7ebc6; }
       .msg.err { background:#fdecec; color:#842029; border:1px solid #f5c2c7; }
-      .small { font-size: 12px; color:#666; margin-top: 10px; }
       .footer { margin-top: 14px; font-size: 12px; color:#666; }
     </style>
   </head>
@@ -92,34 +91,37 @@
           msgOk.style.display = 'none';
         }
 
-        function setBusy(isBusy) {
+        function setBusy(isBusy, label) {
           payBtn.disabled = isBusy;
-          payBtn.textContent = isBusy ? 'Checking availability…' : 'Book & Pay';
+          payBtn.textContent = label || (isBusy ? 'Working…' : 'Book & Pay');
         }
 
-        function getValue(id) {
+        function v(id) {
           const el = document.getElementById(id);
           return (el && typeof el.value === 'string') ? el.value.trim() : '';
         }
 
+        async function safeJson(resp) {
+          const text = await resp.text();
+          try { return { ok: resp.ok, status: resp.status, json: JSON.parse(text) }; }
+          catch { return { ok: false, status: resp.status, json: null, raw: text }; }
+        }
+
         form.addEventListener('submit', async (e) => {
           e.preventDefault();
-
-          // Clear messages
           msgOk.style.display = 'none';
           msgErr.style.display = 'none';
 
-          const pickup = getValue('pickup');
-          const dropoff = getValue('dropoff');
-          const miles = getValue('miles');
-          const email = getValue('email');
-          const whenDate = getValue('whenDate');
-          const whenTime = getValue('whenTime');
-          const notes = getValue('notes');
+          const pickup = v('pickup');
+          const dropoff = v('dropoff');
+          const miles = v('miles');
+          const email = v('email');
+          const whenDate = v('whenDate');
+          const whenTime = v('whenTime');
+          const notes = v('notes');
 
-          // Basic front-end validation
           if (!pickup || !dropoff || !miles || !email || !whenDate || !whenTime) {
-            showErr('Please complete all required fields.');
+            showErr('Missing required fields to check availability.');
             return;
           }
 
@@ -129,11 +131,11 @@
             return;
           }
 
-          setBusy(true);
-
           try {
-            // 1) Check availability (server-side calls Make; avoids CSP issues)
-            const availabilityResp = await fetch('/api/availability', {
+            // 1) Availability check
+            setBusy(true, 'Checking availability…');
+
+            const availResp = await fetch('/api/availability', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -146,38 +148,25 @@
               })
             });
 
-            const availabilityText = await availabilityResp.text();
-            let availability;
-            try {
-              availability = JSON.parse(availabilityText);
-            } catch (err) {
-              setBusy(false);
-              showErr('We could not check availability. Please try again.');
+            const avail = await safeJson(availResp);
+
+            if (!avail.ok || !avail.json) {
+              setBusy(false, 'Book & Pay');
+              showErr('Unexpected response from scheduling system. Please try again.');
               return;
             }
 
-            if (!availabilityResp.ok) {
-              setBusy(false);
-              showErr(availability.message || 'We could not check availability. Please try again.');
-              return;
-            }
+            if (avail.json.available !== true) {
+              setBusy(false, 'Book & Pay');
 
-            if (!availability.available) {
-              setBusy(false);
-
-              // NEW: show suggested time if provided by Make
-              let msg = availability.message || 'That time slot is no longer available. Please choose a different time.';
-              if (availability.suggestedTime) {
-                msg += '\n\nSuggested alternative:\n' + availability.suggestedTime;
-              }
-
-              // Keep using alert for simplicity/consistency with your current build
+              // Keep UX simple: alert + stop before payment
+              const msg = avail.json.message || 'That time slot is no longer available. Please choose a different time.';
               alert(msg);
               return;
             }
 
             // 2) Create Stripe checkout session (v2 route)
-            payBtn.textContent = 'Creating checkout session…';
+            setBusy(true, 'Creating checkout session…');
 
             const checkoutResp = await fetch('/api/stripe/create-checkout-session-v2', {
               method: 'POST',
@@ -193,33 +182,26 @@
               })
             });
 
-            const checkoutText = await checkoutResp.text();
-            let checkout;
-            try {
-              checkout = JSON.parse(checkoutText);
-            } catch (err) {
-              setBusy(false);
+            const checkout = await safeJson(checkoutResp);
+
+            if (!checkout.ok || !checkout.json) {
+              setBusy(false, 'Book & Pay');
               showErr('Unable to create checkout session. Please try again.');
               return;
             }
 
-            if (!checkoutResp.ok) {
-              setBusy(false);
-              showErr(checkout.error || 'Unable to create checkout session. Please try again.');
+            if (!checkout.json.url) {
+              setBusy(false, 'Book & Pay');
+              showErr(checkout.json.error || 'Unable to create checkout session. Please try again.');
               return;
             }
 
-            if (!checkout.url) {
-              setBusy(false);
-              showErr('Checkout session created but no URL was returned. Please try again.');
-              return;
-            }
+            // Redirect to Stripe
+            window.location.href = checkout.json.url;
 
-            // Redirect to Stripe Checkout
-            window.location.href = checkout.url;
           } catch (err) {
             console.error(err);
-            setBusy(false);
+            setBusy(false, 'Book & Pay');
             showErr('Unexpected error. Please try again.');
           }
         });
