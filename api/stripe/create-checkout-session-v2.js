@@ -1,119 +1,128 @@
 const Stripe = require('stripe');
-const getRawBody = require('raw-body');
 
-module.exports.config = { api: { bodyParser: false } };
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-06-20',
-});
-
-// REAL PRICING LOGIC (LIVE + TEST)
-// - First 20 miles: £90 flat
-// - Beyond 20 miles: £90 + £1.80 per extra mile
-// - Then rounded to nearest £5 (under £100) or nearest £10 (>= £100)
-
-const BASE_DISTANCE = 20;       // first 20 miles
-const BASE_PRICE = 90;          // £90 base
-const PER_MILE_RATE = 1.80;     // £1.80 per mile beyond 20 miles
-
-function roundPrice(value) {
-  if (value < 100) {
-    // Round to nearest £5 for normal jobs
-    return Math.round(value / 5) * 5;
-  } else {
-    // Round to nearest £10 for larger jobs
-    return Math.round(value / 10) * 10;
-  }
-}
-
-module.exports = async function (req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-
-  let body;
+module.exports = async function handler(req, res) {
   try {
-    const raw = await getRawBody(req);
-    const text = raw.toString('utf8') || '{}';
-    body = JSON.parse(text);
-  } catch (err) {
-    console.error('Failed to parse request body in create-checkout-session-v2:', err.message);
-    return res.status(400).json({ error: 'Invalid request body' });
-  }
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', 'POST');
+      return res.status(405).json({ error: 'Method Not Allowed' });
+    }
 
-  try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
+
     const {
-      pickup,
-      dropoff,
-      miles,
-      whenDate,
-      whenTime,
-      email,
-    } = body || {};
+      pickup = '',
+      dropoff = '',
+      miles = '',
+      email = '',
+      whenDate = '',
+      whenTime = '',
+      notes = ''
+    } = req.body || {};
 
-    if (!pickup || !dropoff || !email || !whenDate || !whenTime) {
-      return res.status(400).json({
-        error: 'Missing required fields: pickup, dropoff, whenDate, whenTime, email',
-      });
+    // Basic validation
+    if (!pickup || !dropoff || !miles || !email || !whenDate || !whenTime) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Convert miles to number (0 if blank)
-    const milesNum = miles ? parseFloat(miles) : 0;
-
-    let rawPrice = BASE_PRICE;
-
-    if (!Number.isNaN(milesNum) && milesNum > BASE_DISTANCE) {
-      const extraMiles = milesNum - BASE_DISTANCE;
-      rawPrice += extraMiles * PER_MILE_RATE;
+    const milesNum = Number(miles);
+    if (!Number.isFinite(milesNum) || milesNum <= 0) {
+      return res.status(400).json({ error: 'Invalid miles' });
     }
 
-    const finalPrice = roundPrice(rawPrice);
-    const amountPence = Math.round(finalPrice * 100);
+    // ---------- Pricing (keep consistent with your rules; adjust if you want) ----------
+    // Within 20 miles: £90 fixed
+    // Beyond 20 miles: £1.80 per mile
+    const baseWithin20 = 90;
+    const perMile = 1.8;
 
-    console.log('GILEAD V2 REAL pricing (LIVE):', {
-      pickup,
-      dropoff,
-      miles: milesNum,
-      rawPrice,
-      finalPrice,
-      amountPence,
-    });
+    let calculated = milesNum <= 20 ? baseWithin20 : (milesNum * perMile);
+
+    // Round to nearest £5 (you can change to 10 if preferred)
+    calculated = Math.round(calculated / 5) * 5;
+
+    // For safety, never charge less than £1 in test scenarios if you want:
+    // calculated = Math.max(calculated, 1);
+
+    const amountPence = Math.round(calculated * 100);
+
+    // ---------- Schedule window computation ----------
+    // We compute scheduleEnd from date+time, then scheduleStart from miles and buffer.
+    // This ensures the availability logic and Airtable always have Schedule Start/End.
+    const AVG_MPH = 30;     // assumption
+    const BUFFER_MIN = 20;  // buffer
+
+    function toISO(dateStr, timeStr) {
+      // Expect dateStr "YYYY-MM-DD" and timeStr "HH:MM"
+      const dt = new Date(`${dateStr}T${timeStr}:00.000Z`);
+      return Number.isFinite(dt.getTime()) ? dt.toISOString() : null;
+    }
+
+    const scheduleEnd = toISO(whenDate, whenTime);
+    if (!scheduleEnd) {
+      return res.status(400).json({ error: 'Invalid whenDate/whenTime' });
+    }
+
+    const driveMinutes = (milesNum / AVG_MPH) * 60;
+    const totalMinutes = driveMinutes + BUFFER_MIN;
+    const scheduleStart = new Date(new Date(scheduleEnd).getTime() - totalMinutes * 60 * 1000).toISOString();
+
+    // ---------- URLs ----------
+    // Force absolute origin (works behind Vercel)
+    const proto = (req.headers['x-forwarded-proto'] || 'https');
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    const origin = `${proto}://${host}`;
+
+    const success_url = `${origin}/?status=success`;
+    const cancel_url = `${origin}/?status=cancel`;
+
+    // ---------- Stripe Checkout Session ----------
+    // IMPORTANT: put ALL fields into BOTH session.metadata and payment_intent_data.metadata
+    // so your webhook can always retrieve them via session or PI.
+    const metadata = {
+      pickup: String(pickup),
+      dropoff: String(dropoff),
+      miles: String(milesNum),
+      email: String(email),
+      whenDate: String(whenDate),
+      whenTime: String(whenTime),
+      notes: String(notes || ''),
+      scheduleStart: String(scheduleStart),
+      scheduleEnd: String(scheduleEnd),
+      calculatedPrice: String(calculated)
+    };
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      payment_method_types: ['card'],
       customer_email: email,
+      success_url,
+      cancel_url,
       line_items: [
         {
+          quantity: 1,
           price_data: {
             currency: 'gbp',
             unit_amount: amountPence,
             product_data: {
-              name: `Gilead Courier Job – £${finalPrice.toFixed(2)}`,
-              description: `Pickup: ${pickup} → Drop-off: ${dropoff}`,
-            },
-          },
-          quantity: 1,
-        },
+              name: 'Gilead Courier Booking',
+              description: `Pickup: ${pickup} → Dropoff: ${dropoff} (${milesNum} miles)`
+            }
+          }
+        }
       ],
-      metadata: {
-        _version: 'v2',
-        pickup,
-        dropoff,
-        miles: miles || '',
-        when_date: whenDate,
-        when_time: whenTime,
-        email,
-        calculated_price: finalPrice.toString(),
-      },
-      success_url: 'https://www.gileadcouriers.co.uk/?status=success',
-      cancel_url: 'https://www.gileadcouriers.co.uk/?status=cancelled',
+      metadata,
+      payment_intent_data: {
+        metadata
+      }
     });
 
-    return res.status(200).json({ url: session.url });
+    return res.status(200).json({
+      url: session.url,
+      calculatedPrice: calculated,
+      currency: 'GBP'
+    });
+
   } catch (err) {
-    console.error('Error creating checkout session (v2):', err);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error('create-checkout-session-v2 error:', err);
+    return res.status(500).json({ error: 'Server error' });
   }
 };
