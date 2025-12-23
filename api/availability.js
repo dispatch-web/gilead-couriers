@@ -1,147 +1,92 @@
-const getRawBody = require('raw-body');
+/**
+ * /api/availability
+ * Server-side proxy to Make Availability webhook.
+ * Fix: robust JSON extraction to handle malformed Make responses (e.g. leading/trailing junk).
+ */
 
-module.exports.config = { api: { bodyParser: false } };
+function extractFirstJsonObject(raw) {
+  if (!raw || typeof raw !== 'string') return null;
 
-// Prefer MAKE_AVAILABILITY_WEBHOOK_URL (what you already created in Vercel),
-// but also allow AVAILABILITY_WEBHOOK_URL as a fallback.
-const MAKE_WEBHOOK_URL =
-  process.env.MAKE_AVAILABILITY_WEBHOOK_URL || process.env.AVAILABILITY_WEBHOOK_URL;
+  const s = raw.trim();
 
-if (!MAKE_WEBHOOK_URL) {
-  console.warn(
-    'No availability webhook URL set. Set MAKE_AVAILABILITY_WEBHOOK_URL or AVAILABILITY_WEBHOOK_URL in Vercel.'
-  );
+  // Fast path: already valid JSON
+  try {
+    return JSON.parse(s);
+  } catch (_) {}
+
+  // Robust path: extract substring from first "{" to last "}"
+  const first = s.indexOf('{');
+  const last = s.lastIndexOf('}');
+  if (first === -1 || last === -1 || last <= first) return null;
+
+  const candidate = s.slice(first, last + 1).trim();
+  try {
+    return JSON.parse(candidate);
+  } catch (_) {
+    return null;
+  }
 }
 
-// Simple helper: estimate start/end of the job window from miles + requested end time
-function computeScheduleWindow(whenDate, whenTime, miles) {
-  const milesNum = miles ? parseFloat(miles) : 0;
-
-  const end = new Date(`${whenDate}T${whenTime || '00:00'}:00`);
-  if (Number.isNaN(end.getTime())) {
-    return { start: null, end: null };
-  }
-
-  const speedMph = 30; // assumed average
-  const travelHours = milesNum > 0 ? milesNum / speedMph : 1; // default 1h
-  const travelMinutes = travelHours * 60;
-  const bufferMinutes = 30; // loading/unloading buffer
-  const totalMinutes = travelMinutes + bufferMinutes;
-
-  const start = new Date(end.getTime() - totalMinutes * 60 * 1000);
-  return {
-    start: start.toISOString(),
-    end: end.toISOString(),
-  };
-}
-
-module.exports = async function (req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ message: 'Method Not Allowed' });
-  }
-
-  if (!MAKE_WEBHOOK_URL) {
-    return res.status(500).json({
-      available: false,
-      message: 'Booking system configuration error. Please try again later.',
-    });
-  }
-
-  let body;
+module.exports = async function handler(req, res) {
   try {
-    const raw = await getRawBody(req);
-    const text = raw.toString('utf8') || '{}';
-    body = JSON.parse(text);
-  } catch (err) {
-    console.error('Failed to parse request body in /api/availability:', err.message);
-    return res.status(400).json({
-      available: false,
-      message: 'Invalid request body.',
-    });
-  }
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', 'POST');
+      return res.status(405).json({ error: 'Method Not Allowed' });
+    }
 
-  const {
-    pickup,
-    dropoff,
-    miles,
-    whenDate,
-    whenTime,
-    email,
-  } = body || {};
+    const url = process.env.MAKE_AVAILABILITY_WEBHOOK_URL;
+    if (!url) {
+      console.error('Missing MAKE_AVAILABILITY_WEBHOOK_URL env var');
+      return res.status(500).json({ error: 'Server misconfigured' });
+    }
 
-  // Work out which fields look "missing"
-  const missing = [];
-  if (!pickup) missing.push('pickup');
-  if (!dropoff) missing.push('dropoff');
-  if (!whenDate) missing.push('whenDate');
-  if (!whenTime) missing.push('whenTime');
-  // email is useful, but not required for availability
+    const {
+      pickup = '',
+      dropoff = '',
+      miles = '',
+      email = '',
+      whenDate = '',
+      whenTime = ''
+    } = req.body || {};
 
-  if (missing.length > 0) {
-    return res.status(400).json({
-      available: false,
-      message: `Missing required fields to check availability: ${missing.join(', ')}`,
-    });
-  }
+    if (!pickup || !dropoff || !miles || !email || !whenDate || !whenTime) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        available: false,
+        message: 'Missing required fields to check availability.'
+      });
+    }
 
-  const { start, end } = computeScheduleWindow(whenDate, whenTime, miles);
-
-  const payloadForMake = {
-    pickup,
-    dropoff,
-    miles: miles || '',
-    whenDate,
-    whenTime,
-    email: email || '',
-    scheduleStart: start,
-    scheduleEnd: end,
-  };
-
-  try {
-    const makeResp = await fetch(MAKE_WEBHOOK_URL, {
+    // Call Make (POST)
+    const makeResp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payloadForMake),
+      // IMPORTANT: send exactly what your Make scenario expects
+      body: JSON.stringify({ pickup, dropoff, miles, email, whenDate, whenTime }),
     });
 
-    const text = await makeResp.text();
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      console.error('Non-JSON response from Make availability webhook:', text);
+    const raw = await makeResp.text();
 
-      // If Make returns its default "Accepted" text, treat this as "available: true"
-      if (text && text.trim() === 'Accepted') {
-        return res.status(200).json({
-          available: true,
-        });
-      }
-
-      // Anything else non-JSON we still treat as an error
+    // Parse (robust)
+    const parsed = extractFirstJsonObject(raw);
+    if (!parsed || typeof parsed.available !== 'boolean') {
+      console.error('Non-JSON response from Make availability webhook:', raw);
       return res.status(502).json({
+        error: 'Bad upstream response',
         available: false,
-        message: 'Unexpected response from scheduling system. Please try again.',
+        message: 'Unexpected response from scheduling system. Please try again.'
       });
     }
 
-    // We expect { available: true } or { available: false, message: '...' }
-    if (typeof data.available !== 'boolean') {
-      console.warn('Make response missing "available" flag:', data);
-      return res.status(502).json({
-        available: false,
-        message: 'Invalid response from scheduling system. Please try again.',
-      });
-    }
+    // Always return clean JSON to the frontend
+    return res.status(200).json(parsed);
 
-    // Pass through whatever Make responded with
-    return res.status(200).json(data);
   } catch (err) {
-    console.error('Error calling Make availability webhook:', err);
+    console.error('Availability handler error:', err);
     return res.status(502).json({
+      error: 'Upstream error',
       available: false,
-      message: 'Unable to contact scheduling system. Please try again.',
+      message: 'Unexpected response from scheduling system. Please try again.'
     });
   }
 };
