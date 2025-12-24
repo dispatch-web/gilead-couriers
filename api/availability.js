@@ -1,30 +1,45 @@
 /**
  * /api/availability
- * Server-side proxy to Make Availability webhook.
- * Fix: robust JSON extraction to handle malformed Make responses (e.g. leading/trailing junk).
+ * Computes scheduleStart/scheduleEnd from whenDate/whenTime + miles and calls Make availability webhook.
  */
+
+const AVG_MPH = 30;     // scheduling assumption
+const BUFFER_MIN = 20;  // buffer time
+
+function toIsoEnd(whenDate, whenTime) {
+  if (!whenDate || !whenTime) return null;
+  const dt = new Date(`${whenDate}T${whenTime}:00.000Z`);
+  return Number.isFinite(dt.getTime()) ? dt.toISOString() : null;
+}
+
+function computeWindow({ whenDate, whenTime, miles }) {
+  const scheduleEnd = toIsoEnd(whenDate, whenTime);
+  if (!scheduleEnd) return { scheduleStart: null, scheduleEnd: null };
+
+  const milesNum = Number(miles);
+  const driveMinutes = Number.isFinite(milesNum) && milesNum > 0
+    ? (milesNum / AVG_MPH) * 60
+    : 60;
+
+  const totalMinutes = driveMinutes + BUFFER_MIN;
+  const endMs = new Date(scheduleEnd).getTime();
+  const startMs = endMs - totalMinutes * 60 * 1000;
+
+  return {
+    scheduleStart: new Date(startMs).toISOString(),
+    scheduleEnd
+  };
+}
 
 function extractFirstJsonObject(raw) {
   if (!raw || typeof raw !== 'string') return null;
-
   const s = raw.trim();
-
-  // Fast path: already valid JSON
-  try {
-    return JSON.parse(s);
-  } catch (_) {}
-
-  // Robust path: extract substring from first "{" to last "}"
+  try { return JSON.parse(s); } catch (_) {}
   const first = s.indexOf('{');
   const last = s.lastIndexOf('}');
   if (first === -1 || last === -1 || last <= first) return null;
-
   const candidate = s.slice(first, last + 1).trim();
-  try {
-    return JSON.parse(candidate);
-  } catch (_) {
-    return null;
-  }
+  try { return JSON.parse(candidate); } catch (_) { return null; }
 }
 
 module.exports = async function handler(req, res) {
@@ -36,7 +51,7 @@ module.exports = async function handler(req, res) {
 
     const url = process.env.MAKE_AVAILABILITY_WEBHOOK_URL;
     if (!url) {
-      console.error('Missing MAKE_AVAILABILITY_WEBHOOK_URL env var');
+      console.error('Missing MAKE_AVAILABILITY_WEBHOOK_URL');
       return res.status(500).json({ error: 'Server misconfigured' });
     }
 
@@ -46,45 +61,58 @@ module.exports = async function handler(req, res) {
       miles = '',
       email = '',
       whenDate = '',
-      whenTime = ''
+      whenTime = '',
+      vehicle = 'Main Van'
     } = req.body || {};
 
     if (!pickup || !dropoff || !miles || !email || !whenDate || !whenTime) {
       return res.status(400).json({
-        error: 'Missing required fields',
         available: false,
         message: 'Missing required fields to check availability.'
       });
     }
 
-    // Call Make (POST)
+    const { scheduleStart, scheduleEnd } = computeWindow({ whenDate, whenTime, miles });
+
+    if (!scheduleStart || !scheduleEnd) {
+      return res.status(400).json({
+        available: false,
+        message: 'Invalid date/time supplied. Please choose a valid date and time.'
+      });
+    }
+
+    // Send enriched payload to Make
     const makeResp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // IMPORTANT: send exactly what your Make scenario expects
-      body: JSON.stringify({ pickup, dropoff, miles, email, whenDate, whenTime }),
+      body: JSON.stringify({
+        pickup,
+        dropoff,
+        miles,
+        email,
+        whenDate,
+        whenTime,
+        vehicle,
+        scheduleStart,
+        scheduleEnd
+      })
     });
 
     const raw = await makeResp.text();
-
-    // Parse (robust)
     const parsed = extractFirstJsonObject(raw);
+
     if (!parsed || typeof parsed.available !== 'boolean') {
       console.error('Non-JSON response from Make availability webhook:', raw);
       return res.status(502).json({
-        error: 'Bad upstream response',
         available: false,
         message: 'Unexpected response from scheduling system. Please try again.'
       });
     }
 
-    // Always return clean JSON to the frontend
     return res.status(200).json(parsed);
-
   } catch (err) {
-    console.error('Availability handler error:', err);
+    console.error('Availability error:', err);
     return res.status(502).json({
-      error: 'Upstream error',
       available: false,
       message: 'Unexpected response from scheduling system. Please try again.'
     });
