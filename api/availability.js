@@ -1,10 +1,17 @@
 /**
  * /api/availability
- * Computes scheduleStart/scheduleEnd from whenDate/whenTime + miles and calls Make availability webhook.
+ * Purpose:
+ * - Compute scheduleStart / scheduleEnd server-side
+ * - Call Make Availability webhook
+ * - ALWAYS return a clean, customer-friendly response
+ *
+ * Friendly behaviour:
+ * - Any clash or uncertainty returns:
+ *   "That time slot is no longer available. Please choose a different time."
  */
 
-const AVG_MPH = 30;     // scheduling assumption
-const BUFFER_MIN = 20;  // buffer time
+const AVG_MPH = 30;     // Assumed average speed
+const BUFFER_MIN = 20;  // Buffer before job
 
 function toIsoEnd(whenDate, whenTime) {
   if (!whenDate || !whenTime) return null;
@@ -17,9 +24,10 @@ function computeWindow({ whenDate, whenTime, miles }) {
   if (!scheduleEnd) return { scheduleStart: null, scheduleEnd: null };
 
   const milesNum = Number(miles);
-  const driveMinutes = Number.isFinite(milesNum) && milesNum > 0
-    ? (milesNum / AVG_MPH) * 60
-    : 60;
+  const driveMinutes =
+    Number.isFinite(milesNum) && milesNum > 0
+      ? (milesNum / AVG_MPH) * 60
+      : 60;
 
   const totalMinutes = driveMinutes + BUFFER_MIN;
   const endMs = new Date(scheduleEnd).getTime();
@@ -34,25 +42,39 @@ function computeWindow({ whenDate, whenTime, miles }) {
 function extractFirstJsonObject(raw) {
   if (!raw || typeof raw !== 'string') return null;
   const s = raw.trim();
-  try { return JSON.parse(s); } catch (_) {}
+
+  try {
+    return JSON.parse(s);
+  } catch (_) {}
+
   const first = s.indexOf('{');
   const last = s.lastIndexOf('}');
   if (first === -1 || last === -1 || last <= first) return null;
-  const candidate = s.slice(first, last + 1).trim();
-  try { return JSON.parse(candidate); } catch (_) { return null; }
+
+  try {
+    return JSON.parse(s.slice(first, last + 1));
+  } catch (_) {
+    return null;
+  }
 }
 
 module.exports = async function handler(req, res) {
   try {
     if (req.method !== 'POST') {
       res.setHeader('Allow', 'POST');
-      return res.status(405).json({ error: 'Method Not Allowed' });
+      return res.status(405).json({
+        available: false,
+        message: 'That time slot is no longer available. Please choose a different time.'
+      });
     }
 
-    const url = process.env.MAKE_AVAILABILITY_WEBHOOK_URL;
-    if (!url) {
-      console.error('Missing MAKE_AVAILABILITY_WEBHOOK_URL');
-      return res.status(500).json({ error: 'Server misconfigured' });
+    const webhookUrl = process.env.MAKE_AVAILABILITY_WEBHOOK_URL;
+    if (!webhookUrl) {
+      console.error('MAKE_AVAILABILITY_WEBHOOK_URL missing');
+      return res.status(200).json({
+        available: false,
+        message: 'That time slot is no longer available. Please choose a different time.'
+      });
     }
 
     const {
@@ -66,23 +88,22 @@ module.exports = async function handler(req, res) {
     } = req.body || {};
 
     if (!pickup || !dropoff || !miles || !email || !whenDate || !whenTime) {
-      return res.status(400).json({
+      return res.status(200).json({
         available: false,
-        message: 'Missing required fields to check availability.'
+        message: 'That time slot is no longer available. Please choose a different time.'
       });
     }
 
     const { scheduleStart, scheduleEnd } = computeWindow({ whenDate, whenTime, miles });
 
     if (!scheduleStart || !scheduleEnd) {
-      return res.status(400).json({
+      return res.status(200).json({
         available: false,
-        message: 'Invalid date/time supplied. Please choose a valid date and time.'
+        message: 'That time slot is no longer available. Please choose a different time.'
       });
     }
 
-    // Send enriched payload to Make
-    const makeResp = await fetch(url, {
+    const makeResponse = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -98,23 +119,33 @@ module.exports = async function handler(req, res) {
       })
     });
 
-    const raw = await makeResp.text();
-    const parsed = extractFirstJsonObject(raw);
+    const rawText = await makeResponse.text();
+    const parsed = extractFirstJsonObject(rawText);
 
     if (!parsed || typeof parsed.available !== 'boolean') {
-      console.error('Non-JSON response from Make availability webhook:', raw);
-      return res.status(502).json({
+      console.error('Malformed Make response:', rawText);
+      return res.status(200).json({
         available: false,
-        message: 'Unexpected response from scheduling system. Please try again.'
+        message: 'That time slot is no longer available. Please choose a different time.'
       });
     }
 
-    return res.status(200).json(parsed);
+    // Pass through Make result if valid
+    if (parsed.available === false) {
+      return res.status(200).json({
+        available: false,
+        message:
+          parsed.message ||
+          'That time slot is no longer available. Please choose a different time.'
+      });
+    }
+
+    return res.status(200).json({ available: true });
   } catch (err) {
     console.error('Availability error:', err);
-    return res.status(502).json({
+    return res.status(200).json({
       available: false,
-      message: 'Unexpected response from scheduling system. Please try again.'
+      message: 'That time slot is no longer available. Please choose a different time.'
     });
   }
 };
