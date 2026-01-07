@@ -36,7 +36,6 @@
       padding:0 20px;
     }
 
-    /* ================= HEADER ================= */
     header{
       background: linear-gradient(180deg, var(--navy), var(--navy-dark));
       color:#fff;
@@ -106,15 +105,11 @@
       box-shadow:0 10px 22px rgba(0,0,0,0.18);
     }
 
-    /* ================= HERO ================= */
+    /* HERO */
     .hero{
       background:
-        linear-gradient(
-          180deg,
-          rgba(11,31,59,0.92),
-          rgba(11,31,59,0.65)
-        ),
-        url("/images/hero-courier.jpg"); /* <<< THIS IS THE IMAGE PATH */
+        linear-gradient(180deg, rgba(11,31,59,0.92), rgba(11,31,59,0.65)),
+        url("/app/images/hero-courier.jpg"); /* <<< FIXED: matches the path that loads */
       background-size:cover;
       background-position:center;
       color:#fff;
@@ -188,7 +183,6 @@
       line-height:1.55;
     }
 
-    /* ================= MAIN ================= */
     main{ padding:36px 0; }
 
     .grid3{
@@ -255,7 +249,6 @@
 <section class="hero">
   <div class="wrap">
     <div class="heroInner">
-
       <div>
         <h2>Professional A-to-B courier service.</h2>
         <p>
@@ -274,7 +267,6 @@
         <p>• Reliable comms</p>
         <p>• Professional vehicle</p>
       </div>
-
     </div>
   </div>
 </section>
