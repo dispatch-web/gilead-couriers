@@ -4,407 +4,305 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gilead Couriers | Discreet. Reliable. Elite.</title>
-  <meta name="description" content="Discreet, reliable, elite A-to-B courier service across the UK. Fixed £90 within 20 miles. £1.80+/mile thereafter. Book online." />
 
   <style>
     :root{
       --navy:#0B1F3B;
-      --navy2:#0A1730;
+      --navy-dark:#08162C;
       --gold:#C9A24D;
       --ink:#111827;
       --muted:#6B7280;
       --bg:#F5F7FB;
       --card:#FFFFFF;
       --line:#E5E7EB;
-      --shadow: 0 12px 30px rgba(0,0,0,0.10);
+      --shadow: 0 14px 32px rgba(0,0,0,0.12);
       --radius: 14px;
     }
 
     *{ box-sizing:border-box; }
     html,body{ margin:0; padding:0; }
+
     body{
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: var(--bg);
       color: var(--ink);
     }
 
-    a{ color: inherit; text-decoration:none; }
-    .wrap{ max-width: 1100px; margin: 0 auto; padding: 0 18px; }
+    a{ text-decoration:none; color:inherit; }
 
-    /* Header */
-    header{
-      background: linear-gradient(180deg, var(--navy), var(--navy2));
-      color: #fff;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:0 20px;
     }
+
+    /* ================= HEADER ================= */
+    header{
+      background: linear-gradient(180deg, var(--navy), var(--navy-dark));
+      color:#fff;
+      border-bottom:1px solid rgba(255,255,255,0.08);
+    }
+
     .topbar{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      padding: 16px 0;
-      gap: 14px;
+      padding:18px 0;
+      gap:16px;
     }
+
     .brand{
       display:flex;
       align-items:center;
-      gap: 12px;
-      min-width: 220px;
+      gap:12px;
     }
-    .mark{
-      width: 38px; height: 38px;
-      border-radius: 10px;
-      background: rgba(201,162,77,0.16);
-      border: 1px solid rgba(201,162,77,0.45);
-      position: relative;
+
+    .logo{
+      width:40px;
+      height:40px;
+      border-radius:10px;
+      background:rgba(201,162,77,0.18);
+      border:1px solid rgba(201,162,77,0.45);
     }
-    .mark:after{
-      content:"";
-      position:absolute;
-      inset: 9px 8px 10px 10px;
-      border-left: 3px solid var(--gold);
-      border-bottom: 3px solid var(--gold);
-      transform: skewX(-10deg);
-      opacity: 0.9;
-    }
+
     .brand h1{
       margin:0;
-      font-size: 18px;
-      letter-spacing: 0.2px;
+      font-size:18px;
+      letter-spacing:0.2px;
     }
+
     .brand p{
       margin:0;
-      font-size: 12px;
-      color: rgba(255,255,255,0.75);
+      font-size:12px;
+      color:rgba(255,255,255,0.75);
     }
 
     nav{
       display:flex;
       align-items:center;
-      gap: 14px;
-      flex-wrap: wrap;
-      justify-content:flex-end;
+      gap:14px;
+      flex-wrap:wrap;
     }
-    .navlink{
-      font-size: 13px;
-      color: rgba(255,255,255,0.85);
-      padding: 8px 10px;
-      border-radius: 10px;
-    }
-    .navlink:hover{
-      background: rgba(255,255,255,0.08);
-      color:#fff;
-    }
-    .cta{
-      background: linear-gradient(180deg, #E6C772, var(--gold));
-      color: #0A1730;
-      font-weight: 800;
-      padding: 10px 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(0,0,0,0.15);
-      box-shadow: 0 10px 22px rgba(0,0,0,0.18);
-    }
-    .cta:hover{ filter: brightness(1.03); }
 
-    /* Hero */
-    .hero{
-      background: linear-gradient(180deg, rgba(11,31,59,0.92), rgba(11,31,59,0.65)),
-                  url("/images/hero-courier.jpg");
-      background-size: cover;
-      background-position: center;
-      color:#fff;
-      padding: 62px 0 58px;
+    .navlink{
+      font-size:13px;
+      color:rgba(255,255,255,0.85);
+      padding:8px 10px;
+      border-radius:10px;
     }
+
+    .navlink:hover{
+      background:rgba(255,255,255,0.08);
+      color:#fff;
+    }
+
+    .cta{
+      background:linear-gradient(180deg, #E6C772, var(--gold));
+      color:#08162C;
+      font-weight:800;
+      padding:10px 14px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,0.18);
+      box-shadow:0 10px 22px rgba(0,0,0,0.18);
+    }
+
+    /* ================= HERO ================= */
+    .hero{
+      background:
+        linear-gradient(
+          180deg,
+          rgba(11,31,59,0.92),
+          rgba(11,31,59,0.65)
+        ),
+        url("/images/hero-courier.jpg"); /* <<< THIS IS THE IMAGE PATH */
+      background-size:cover;
+      background-position:center;
+      color:#fff;
+      padding:70px 0 64px;
+    }
+
     .heroInner{
       display:grid;
-      grid-template-columns: 1.25fr 0.75fr;
-      gap: 22px;
-      align-items: end;
+      grid-template-columns:1.3fr 0.7fr;
+      gap:24px;
+      align-items:end;
     }
-    .kicker{
-      display:inline-flex;
-      gap: 10px;
-      align-items:center;
-      font-size: 12px;
-      color: rgba(255,255,255,0.85);
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(201,162,77,0.35);
-      background: rgba(201,162,77,0.10);
-      width: fit-content;
-    }
-    .dot{
-      width:8px; height:8px; border-radius:999px;
-      background: var(--gold);
-      box-shadow: 0 0 0 4px rgba(201,162,77,0.20);
-    }
+
     .hero h2{
-      margin: 14px 0 10px;
-      font-size: 44px;
-      line-height: 1.05;
-      letter-spacing: -0.02em;
+      margin:0 0 12px;
+      font-size:44px;
+      line-height:1.05;
+      letter-spacing:-0.02em;
     }
+
     .hero p{
-      margin: 0 0 18px;
-      font-size: 16px;
-      color: rgba(255,255,255,0.88);
-      line-height: 1.6;
-      max-width: 64ch;
+      margin:0 0 22px;
+      font-size:16px;
+      color:rgba(255,255,255,0.9);
+      line-height:1.6;
+      max-width:60ch;
     }
+
     .heroActions{
       display:flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
     }
+
     .btnPrimary{
-      display:inline-block;
-      background: linear-gradient(180deg, #E6C772, var(--gold));
-      color: #0A1730;
-      font-weight: 900;
-      padding: 13px 18px;
-      border-radius: 12px;
-      border: 1px solid rgba(0,0,0,0.18);
+      background:linear-gradient(180deg, #E6C772, var(--gold));
+      color:#08162C;
+      font-weight:900;
+      padding:14px 20px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,0.18);
     }
-    .btnPrimary:hover{ filter: brightness(1.03); }
+
     .btnGhost{
-      display:inline-block;
-      background: rgba(255,255,255,0.10);
-      color: #fff;
-      font-weight: 700;
-      padding: 13px 16px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.22);
+      background:rgba(255,255,255,0.12);
+      color:#fff;
+      font-weight:700;
+      padding:14px 18px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.25);
     }
-    .btnGhost:hover{ background: rgba(255,255,255,0.14); }
 
     .heroCard{
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.16);
-      border-radius: var(--radius);
-      padding: 18px 16px;
-      box-shadow: 0 18px 45px rgba(0,0,0,0.22);
+      background:rgba(255,255,255,0.08);
+      border:1px solid rgba(255,255,255,0.2);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:0 18px 44px rgba(0,0,0,0.3);
     }
+
     .heroCard h3{
       margin:0 0 10px;
-      font-size: 14px;
-      color: rgba(255,255,255,0.90);
-      letter-spacing: 0.2px;
+      font-size:14px;
+      letter-spacing:0.2px;
     }
-    .heroCard .line{
-      height:1px;
-      background: rgba(255,255,255,0.15);
-      margin: 12px 0;
-    }
+
     .heroCard p{
       margin:0;
-      font-size: 13px;
-      color: rgba(255,255,255,0.82);
-      line-height: 1.55;
+      font-size:13px;
+      color:rgba(255,255,255,0.85);
+      line-height:1.55;
     }
-    .heroCard strong{ color: #fff; }
 
-    /* Sections */
-    .section{ padding: 34px 0 8px; }
+    /* ================= MAIN ================= */
+    main{ padding:36px 0; }
+
     .grid3{
       display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
+      grid-template-columns:repeat(3,1fr);
+      gap:18px;
     }
+
     .card{
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 18px 18px;
-      box-shadow: var(--shadow);
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--shadow);
     }
+
     .card h4{
-      margin: 0 0 8px;
-      font-size: 14px;
-      letter-spacing: 0.2px;
+      margin:0 0 8px;
+      font-size:14px;
     }
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap: 8px;
-      font-size: 12px;
-      color: #0A1730;
-      background: rgba(201,162,77,0.18);
-      border: 1px solid rgba(201,162,77,0.35);
-      padding: 7px 10px;
-      border-radius: 999px;
-      margin-bottom: 10px;
-      width: fit-content;
-    }
-    .miniDot{ width:7px; height:7px; border-radius: 999px; background: var(--gold); }
 
     .card p{
       margin:0;
-      font-size: 14px;
-      color: var(--muted);
-      line-height: 1.6;
+      font-size:14px;
+      color:var(--muted);
+      line-height:1.6;
     }
-    .card strong{ color: var(--ink); }
 
-    /* Contact strip */
-    .contactStrip{
-      margin-top: 18px;
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 16px 18px;
-      box-shadow: var(--shadow);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-    .contactStrip .left{
-      display:flex;
-      flex-direction:column;
-      gap: 4px;
-    }
-    .contactStrip .left .title{
-      font-weight: 900;
-      letter-spacing: 0.1px;
-    }
-    .contactStrip .left .sub{
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.4;
-    }
-    .contactStrip .right{
-      display:flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items:center;
-    }
-    .contactLink{
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: #fff;
-      font-weight: 800;
-      font-size: 13px;
-    }
-    .contactLink:hover{ border-color: rgba(201,162,77,0.65); }
-
-    /* Footer */
     footer{
-      padding: 26px 0 38px;
-      color: #6B7280;
-      font-size: 12px;
+      padding:24px 0 36px;
+      font-size:12px;
+      color:var(--muted);
+      text-align:center;
     }
 
-    /* Responsive */
-    @media (max-width: 900px){
-      .heroInner{ grid-template-columns: 1fr; }
-      .grid3{ grid-template-columns: 1fr; }
-      .hero h2{ font-size: 38px; }
+    @media(max-width:900px){
+      .heroInner{ grid-template-columns:1fr; }
+      .grid3{ grid-template-columns:1fr; }
+      .hero h2{ font-size:36px; }
     }
   </style>
 </head>
 
 <body>
 
-  <header>
-    <div class="wrap">
-      <div class="topbar">
-        <div class="brand">
-          <div class="mark" aria-hidden="true"></div>
-          <div>
-            <h1>Gilead Couriers</h1>
-            <p>Discreet. Reliable. Elite.</p>
-          </div>
-        </div>
-
-        <nav aria-label="Primary">
-          <a class="navlink" href="/book.html">Book</a>
-          <a class="navlink" href="#pricing">Pricing</a>
-          <a class="navlink" href="#contact">Contact</a>
-          <a class="cta" href="/book.html">Book a Courier</a>
-        </nav>
-      </div>
-    </div>
-  </header>
-
-  <section class="hero">
-    <div class="wrap">
-      <div class="heroInner">
-
+<header>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
         <div>
-          <div class="kicker"><span class="dot"></span> Same-day A-to-B courier service across the UK</div>
-          <h2>Professional courier jobs, handled properly.</h2>
-          <p>
-            Direct A-to-B transport with clear pricing, reliable communication, and live dispatch via secure Telegram after booking confirmation.
-          </p>
-
-          <div class="heroActions">
-            <a class="btnPrimary" href="/book.html">Book a Courier</a>
-            <a class="btnGhost" href="#pricing">View Pricing</a>
-          </div>
+          <h1>Gilead Couriers</h1>
+          <p>Discreet. Reliable. Elite.</p>
         </div>
-
-        <div class="heroCard">
-          <h3>What you get</h3>
-          <p><strong>Discreet</strong> handling for high-value or sensitive items</p>
-          <div class="line"></div>
-          <p><strong>Reliable</strong> comms and confirmation</p>
-          <div class="line"></div>
-          <p><strong>Elite</strong> service standard, no nonsense</p>
-        </div>
-
       </div>
+      <nav>
+        <a class="navlink" href="/book.html">Book</a>
+        <a class="cta" href="/book.html">Book a Courier</a>
+      </nav>
     </div>
-  </section>
+  </div>
+</header>
 
-  <main class="wrap">
+<section class="hero">
+  <div class="wrap">
+    <div class="heroInner">
 
-    <section class="section" id="pricing">
-      <div class="grid3">
-
-        <div class="card">
-          <div class="pill"><span class="miniDot"></span> Vehicle</div>
-          <h4>Ford Transit (MWB)</h4>
-          <p>Suitable for professional courier work, secure loads, and reliable UK coverage.</p>
-        </div>
-
-        <div class="card">
-          <div class="pill"><span class="miniDot"></span> Pricing</div>
-          <h4>Simple and transparent</h4>
-          <p><strong>£90 fixed</strong> within 20 miles. <strong>£1.80+ per mile</strong> thereafter. Out-of-hours & weekend surcharges may apply.</p>
-        </div>
-
-        <div class="card">
-          <div class="pill"><span class="miniDot"></span> Dispatch</div>
-          <h4>Live job confirmation</h4>
-          <p>After booking confirmation, you receive live dispatch updates via secure Telegram.</p>
-        </div>
-
-      </div>
-
-      <div class="contactStrip" id="contact">
-        <div class="left">
-          <div class="title">Need to speak to dispatch?</div>
-          <div class="sub">Phone: <strong>01452 260620</strong> · Email: <strong>dispatch@gileadcouriers.co.uk</strong></div>
-        </div>
-        <div class="right">
-          <a class="contactLink" href="tel:01452260620">Call</a>
-          <a class="contactLink" href="mailto:dispatch@gileadcouriers.co.uk">Email</a>
-          <a class="btnPrimary" href="/book.html">Book Now</a>
+      <div>
+        <h2>Professional A-to-B courier service.</h2>
+        <p>
+          Direct, same-day courier jobs across the UK with clear pricing,
+          reliable communication, and live dispatch after booking.
+        </p>
+        <div class="heroActions">
+          <a class="btnPrimary" href="/book.html">Book a Courier</a>
+          <a class="btnGhost" href="/book.html">Get a Quote</a>
         </div>
       </div>
-    </section>
 
-    <footer>
-      © <span id="y"></span> Gilead Couriers. All rights reserved.
-    </footer>
+      <div class="heroCard">
+        <h3>Service standard</h3>
+        <p>• Discreet handling</p>
+        <p>• Reliable comms</p>
+        <p>• Professional vehicle</p>
+      </div>
 
-  </main>
+    </div>
+  </div>
+</section>
 
-  <script>
-    document.getElementById("y").textContent = new Date().getFullYear();
-  </script>
+<main class="wrap">
+  <div class="grid3">
+    <div class="card">
+      <h4>Vehicle</h4>
+      <p>Ford Transit (MWB) suitable for professional courier work.</p>
+    </div>
+    <div class="card">
+      <h4>Pricing</h4>
+      <p><strong>£90</strong> within 20 miles · <strong>£1.80+</strong> per mile thereafter.</p>
+    </div>
+    <div class="card">
+      <h4>Dispatch</h4>
+      <p>Live confirmation via secure Telegram after booking.</p>
+    </div>
+  </div>
+</main>
+
+<footer>
+  © <span id="y"></span> Gilead Couriers
+</footer>
+
+<script>
+  document.getElementById("y").textContent = new Date().getFullYear();
+</script>
 
 </body>
 </html>
