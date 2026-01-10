@@ -47,32 +47,30 @@
       align-items:center;
       justify-content:space-between;
       padding:18px 0;
-      gap:16px;
+      gap:20px;
     }
 
     .brand{
       display:flex;
       align-items:center;
-      gap:14px;
+      gap:16px;
     }
 
-    /* ONLY CHANGE IS HERE — LOGO SIZE */
+    /* LOGO MADE LARGER */
     .brand img{
-      height:72px; /* was 44px */
+      height:64px;
       width:auto;
       display:block;
     }
 
-    .brandText h1{
-      margin:0;
-      font-size:18px;
-      letter-spacing:0.2px;
-    }
-
+    /* STRAPLINE ONLY (NO DUPLICATE BUSINESS NAME) */
     .brandText p{
       margin:0;
-      font-size:12px;
-      color:rgba(255,255,255,0.75);
+      font-size:14px;
+      font-weight:700;
+      letter-spacing:0.6px;
+      color:rgba(255,255,255,0.85);
+      text-transform:uppercase;
     }
 
     nav{
@@ -172,7 +170,7 @@
     @media(max-width:900px){
       .heroInner{ grid-template-columns:1fr; }
       .hero h2{ font-size:36px; }
-      .brand img{ height:60px; }
+      .brand img{ height:54px; }
     }
   </style>
 </head>
@@ -185,7 +183,6 @@
       <div class="brand">
         <img src="/app/images/gilead-logo.png" alt="Gilead Couriers logo" />
         <div class="brandText">
-          <h1>Gilead Couriers</h1>
           <p>Discreet. Reliable. Elite.</p>
         </div>
       </div>
@@ -201,7 +198,7 @@
   <div class="wrap">
     <div class="heroInner">
       <div>
-        <h2>A professional A-to-B courier service.</h2>
+        <h2>Professional A-to-B courier service.</h2>
         <p>
           Time-critical, discreet courier movements across the UK for high-trust,
           regulated and professional clients.
