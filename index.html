@@ -160,11 +160,30 @@
 
     main{ padding:36px 0; }
 
+    /* FOOTER (UPDATED) */
     footer{
       padding:22px 0 36px;
       font-size:12px;
       color:var(--muted);
       text-align:center;
+    }
+
+    .footerLinks{
+      margin-top:10px;
+      display:flex;
+      justify-content:center;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .footerLinks a{
+      color: var(--muted);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .footerLinks a:hover{
+      color: #374151;
     }
 
     @media(max-width:900px){
@@ -214,6 +233,11 @@
 
 <footer>
   © <span id="y"></span> Gilead Couriers
+  <div class="footerLinks" aria-label="Legal links">
+    <a href="/terms.html">Terms &amp; Conditions</a>
+    <a href="/refund-policy.html">Refund Policy</a>
+    <a href="/privacy-policy.html">Privacy Policy</a>
+  </div>
 </footer>
 
 <script>
