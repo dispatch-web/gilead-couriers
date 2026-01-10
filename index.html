@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Discreet. Reliable. Elite. | Gilead Couriers</title>
+  <title>Gilead Couriers | Discreet. Reliable. Elite.</title>
 
   <style>
     :root{
@@ -13,8 +13,10 @@
       --ink:#111827;
       --muted:#6B7280;
       --bg:#F5F7FB;
+      --card:#FFFFFF;
       --line:#E5E7EB;
       --shadow: 0 14px 32px rgba(0,0,0,0.12);
+      --radius: 14px;
     }
 
     *{ box-sizing:border-box; }
@@ -34,7 +36,6 @@
       padding:0 20px;
     }
 
-    /* HEADER */
     header{
       background: linear-gradient(180deg, var(--navy), var(--navy-dark));
       color:#fff;
@@ -45,19 +46,31 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      padding:20px 0;
+      padding:18px 0;
       gap:20px;
     }
 
     .brand{
       display:flex;
       align-items:center;
+      gap:16px;
     }
 
+    /* LOGO MADE LARGER */
     .brand img{
-      height:68px;               /* LOGO MADE BIGGER */
+      height:64px;
       width:auto;
       display:block;
+    }
+
+    /* STRAPLINE ONLY (NO DUPLICATE BUSINESS NAME) */
+    .brandText p{
+      margin:0;
+      font-size:14px;
+      font-weight:700;
+      letter-spacing:0.6px;
+      color:rgba(255,255,255,0.85);
+      text-transform:uppercase;
     }
 
     nav{
@@ -83,13 +96,12 @@
       background:linear-gradient(180deg, #E6C772, var(--gold));
       color:#08162C;
       font-weight:800;
-      padding:10px 16px;
+      padding:10px 14px;
       border-radius:12px;
       border:1px solid rgba(0,0,0,0.18);
       box-shadow:0 10px 22px rgba(0,0,0,0.18);
     }
 
-    /* HERO */
     .hero{
       background:
         linear-gradient(180deg, rgba(11,31,59,0.92), rgba(11,31,59,0.65)),
@@ -97,31 +109,34 @@
       background-size:cover;
       background-position:center;
       color:#fff;
-      padding:84px 0 72px;
+      padding:70px 0 64px;
     }
 
     .heroInner{
-      max-width:720px;
+      display:grid;
+      grid-template-columns:1.3fr 0.7fr;
+      gap:24px;
+      align-items:end;
     }
 
-    .hero h1{
-      margin:0 0 18px;
-      font-size:56px;            /* STRAPLINE PROMOTED */
+    .hero h2{
+      margin:0 0 12px;
+      font-size:44px;
       line-height:1.05;
       letter-spacing:-0.02em;
-      font-weight:900;
     }
 
     .hero p{
-      margin:0 0 26px;
-      font-size:18px;
+      margin:0 0 22px;
+      font-size:16px;
       color:rgba(255,255,255,0.9);
       line-height:1.6;
+      max-width:60ch;
     }
 
     .heroActions{
       display:flex;
-      gap:14px;
+      gap:12px;
       flex-wrap:wrap;
     }
 
@@ -129,30 +144,33 @@
       background:linear-gradient(180deg, #E6C772, var(--gold));
       color:#08162C;
       font-weight:900;
-      padding:14px 22px;
+      padding:14px 20px;
       border-radius:12px;
       border:1px solid rgba(0,0,0,0.18);
     }
 
     .btnGhost{
-      background:rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.12);
       color:#fff;
       font-weight:700;
-      padding:14px 20px;
+      padding:14px 18px;
       border-radius:12px;
       border:1px solid rgba(255,255,255,0.25);
     }
 
+    main{ padding:36px 0; }
+
     footer{
-      padding:24px 0 36px;
+      padding:22px 0 36px;
       font-size:12px;
       color:var(--muted);
       text-align:center;
     }
 
     @media(max-width:900px){
-      .brand img{ height:56px; }
-      .hero h1{ font-size:42px; }
+      .heroInner{ grid-template-columns:1fr; }
+      .hero h2{ font-size:36px; }
+      .brand img{ height:54px; }
     }
   </style>
 </head>
@@ -163,7 +181,10 @@
   <div class="wrap">
     <div class="topbar">
       <div class="brand">
-        <img src="/app/images/gilead-logo.png" alt="Gilead Couriers logo" />
+        <img src="/app/images/gilead-logo.jpeg" alt="Gilead Couriers logo" />
+        <div class="brandText">
+          <p>Discreet. Reliable. Elite.</p>
+        </div>
       </div>
       <nav>
         <a class="navlink" href="/book.html">Book</a>
@@ -176,14 +197,16 @@
 <section class="hero">
   <div class="wrap">
     <div class="heroInner">
-      <h1>Discreet. Reliable. Elite.</h1>
-      <p>
-        Professional A-to-B courier services for time-critical, high-trust
-        deliveries across the UK — trusted by regulated and professional clients.
-      </p>
-      <div class="heroActions">
-        <a class="btnPrimary" href="/book.html">Book a Courier</a>
-        <a class="btnGhost" href="#about">About Us</a>
+      <div>
+        <h2>Professional A-to-B courier service.</h2>
+        <p>
+          Time-critical, discreet courier movements across the UK for high-trust,
+          regulated and professional clients.
+        </p>
+        <div class="heroActions">
+          <a class="btnPrimary" href="/book.html">Book a Courier</a>
+          <a class="btnGhost" href="#about">About Us</a>
+        </div>
       </div>
     </div>
   </div>
