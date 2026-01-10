@@ -47,30 +47,32 @@
       align-items:center;
       justify-content:space-between;
       padding:18px 0;
-      gap:20px;
+      gap:16px;
     }
 
     .brand{
       display:flex;
       align-items:center;
-      gap:16px;
+      gap:14px;
     }
 
-    /* LOGO MADE LARGER */
+    /* ONLY CHANGE IS HERE — LOGO SIZE */
     .brand img{
-      height:64px;
+      height:72px; /* was 44px */
       width:auto;
       display:block;
     }
 
-    /* STRAPLINE ONLY (NO DUPLICATE BUSINESS NAME) */
+    .brandText h1{
+      margin:0;
+      font-size:18px;
+      letter-spacing:0.2px;
+    }
+
     .brandText p{
       margin:0;
-      font-size:14px;
-      font-weight:700;
-      letter-spacing:0.6px;
-      color:rgba(255,255,255,0.85);
-      text-transform:uppercase;
+      font-size:12px;
+      color:rgba(255,255,255,0.75);
     }
 
     nav{
@@ -105,7 +107,7 @@
     .hero{
       background:
         linear-gradient(180deg, rgba(11,31,59,0.92), rgba(11,31,59,0.65)),
-        url("/app/images/hero-courier.jpg");
+        url("/app/images/hero-courier.png");
       background-size:cover;
       background-position:center;
       color:#fff;
@@ -170,7 +172,7 @@
     @media(max-width:900px){
       .heroInner{ grid-template-columns:1fr; }
       .hero h2{ font-size:36px; }
-      .brand img{ height:54px; }
+      .brand img{ height:60px; }
     }
   </style>
 </head>
@@ -183,6 +185,7 @@
       <div class="brand">
         <img src="/app/images/gilead-logo.png" alt="Gilead Couriers logo" />
         <div class="brandText">
+          <h1>Gilead Couriers</h1>
           <p>Discreet. Reliable. Elite.</p>
         </div>
       </div>
