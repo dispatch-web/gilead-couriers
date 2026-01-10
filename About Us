@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About Us | Gilead Couriers</title>
+  <meta name="description" content="About Gilead Couriers — a discreet, reliability-first A-to-B courier service across the UK." />
+
+  <style>
+    :root{
+      --navy:#0B1F3B;
+      --navy-dark:#08162C;
+      --gold:#C9A24D;
+      --ink:#111827;
+      --muted:#6B7280;
+      --bg:#F5F7FB;
+      --card:#FFFFFF;
+      --line:#E5E7EB;
+      --shadow: 0 14px 32px rgba(0,0,0,0.12);
+      --radius: 14px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; padding:0; }
+
+    body{
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.7;
+    }
+
+    a{ color: inherit; }
+
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    header{
+      background: linear-gradient(180deg, var(--navy), var(--navy-dark));
+      color:#fff;
+      border-bottom:1px solid rgba(255,255,255,0.08);
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:18px 0;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      text-decoration:none;
+    }
+
+    .brand img{
+      height:54px;
+      width:auto;
+      display:block;
+    }
+
+    .brandText{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+
+    .brandText .tag{
+      margin:0;
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:0.6px;
+      color:rgba(255,255,255,0.85);
+      text-transform:uppercase;
+    }
+
+    nav{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .navlink{
+      font-size:13px;
+      color:rgba(255,255,255,0.85);
+      text-decoration:none;
+      padding:8px 10px;
+      border-radius:10px;
+    }
+
+    .navlink:hover{
+      background:rgba(255,255,255,0.08);
+      color:#fff;
+    }
+
+    .cta{
+      background:linear-gradient(180deg, #E6C772, var(--gold));
+      color:#08162C;
+      font-weight:900;
+      padding:10px 14px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,0.18);
+      box-shadow:0 10px 22px rgba(0,0,0,0.18);
+      text-decoration:none;
+    }
+
+    main{
+      padding: 26px 0 40px;
+    }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    h1{
+      margin: 0 0 8px;
+      font-size: 26px;
+      letter-spacing:-0.02em;
+    }
+
+    .lead{
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    h2{
+      margin: 18px 0 8px;
+      font-size: 15px;
+      letter-spacing: 0.2px;
+    }
+
+    p{ margin: 0 0 12px; }
+
+    ul{
+      margin: 10px 0 12px;
+      padding-left: 18px;
+    }
+
+    li{ margin: 7px 0; }
+
+    .pillRow{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top: 10px;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(201,162,77,0.35);
+      background: rgba(201,162,77,0.14);
+      color: #08162C;
+      font-weight: 900;
+      font-size: 12px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+      text-decoration:none;
+    }
+
+    .dot{
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background: var(--gold);
+    }
+
+    .contactStrip{
+      margin-top: 16px;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      display:flex;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap:wrap;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    footer{
+      padding: 22px 0 36px;
+      text-align:center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .footerLinks{
+      margin-top:10px;
+      display:flex;
+      justify-content:center;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .footerLinks a{
+      color: var(--muted);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .footerLinks a:hover{ color:#374151; }
+
+    @media (max-width: 720px){
+      .brand img{ height:48px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="wrap">
+      <div class="topbar">
+        <a class="brand" href="/index.html" aria-label="Gilead Couriers home">
+          <img src="/app/images/gilead-logo.png" alt="Gilead Couriers logo" />
+          <div class="brandText">
+            <p class="tag">Discreet. Reliable. Elite.</p>
+          </div>
+        </a>
+
+        <nav aria-label="Primary">
+          <a class="navlink" href="/book.html">Book</a>
+          <a class="navlink" href="/about.html">About</a>
+          <a class="cta" href="/book.html">Book a Courier</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="card">
+      <h1>About Gilead Couriers</h1>
+      <p class="lead">
+        Gilead Couriers provides a discreet, reliability-first A-to-B courier service across the UK for clients who cannot
+        afford delays, ambiguity, or poor handling.
+      </p>
+
+      <h2>What we do</h2>
+      <p>
+        We deliver time-critical consignments directly from pickup to drop-off — with professional communication and clear confirmation.
+        Typical jobs include urgent parts, sensitive documents, high-value items, and scheduled A-to-B movements.
+      </p>
+
+      <h2>Who we support</h2>
+      <p>
+        Our service is designed for high-trust environments, including professional and regulated contexts such as engineering,
+        manufacturing, legal services, healthcare suppliers, and government-adjacent organisations — as well as private clients with
+        sensitive or high-value requirements.
+      </p>
+
+      <h2>How we operate</h2>
+      <ul>
+        <li><strong>Direct A-to-B</strong> — no unnecessary stops, no “multi-drop” uncertainty.</li>
+        <li><strong>Discretion</strong> — sensitive handling and professional conduct.</li>
+        <li><strong>Reliability</strong> — clear confirmation and accountable delivery.</li>
+        <li><strong>Communication</strong> — booking confirmation and dispatch updates.</li>
+      </ul>
+
+      <div class="pillRow" aria-label="Service qualities">
+        <a class="pill" href="/book.html"><span class="dot" aria-hidden="true"></span> Book now</a>
+        <span class="pill"><span class="dot" aria-hidden="true"></span> Discreet</span>
+        <span class="pill"><span class="dot" aria-hidden="true"></span> Reliable</span>
+        <span class="pill"><span class="dot" aria-hidden="true"></span> Accountable</span>
+      </div>
+
+      <div class="contactStrip" aria-label="Dispatch contact">
+        <div><strong>Dispatch</strong>: dispatch@gileadcouriers.co.uk</div>
+        <div><strong>Phone</strong>: 01452 260620</div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    © <span id="y"></span> Gilead Couriers
+    <div class="footerLinks" aria-label="Legal links">
+      <a href="/terms.html">Terms &amp; Conditions</a>
+      <a href="/refund-policy.html">Refund Policy</a>
+      <a href="/privacy-policy.html">Privacy Policy</a>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
