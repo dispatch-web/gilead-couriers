@@ -5,41 +5,77 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Gilead Couriers — Book a Job</title>
     <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 24px; background: #f6f7fb; color:#111; }
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 24px;
+        background:
+          linear-gradient(rgba(245,247,251,0.94), rgba(245,247,251,0.94)),
+          url("/app/images/hero-courier.jpg");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        color:#111;
+      }
 
-      /* ONLY CHANGE IS HERE */
-      .wrap { max-width: 760px; margin: 0 auto; background: #EEF2F8; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.06); }
+      .wrap {
+        max-width: 760px;
+        margin: 0 auto;
+        background: #EEF2F8;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,.06);
+      }
 
       h1 { margin: 0 0 8px; font-size: 24px; }
       p.sub { margin: 0 0 20px; color:#444; }
+
       label { display:block; font-weight:600; margin: 14px 0 6px; }
-      input, textarea { width:100%; box-sizing:border-box; padding: 10px 12px; border: 1px solid #d7dbe7; border-radius: 10px; font-size: 14px; background:#fff; }
+
+      input, textarea {
+        width:100%;
+        box-sizing:border-box;
+        padding: 10px 12px;
+        border: 1px solid #d7dbe7;
+        border-radius: 10px;
+        font-size: 14px;
+        background:#fff;
+      }
+
       textarea { min-height: 76px; resize: vertical; }
+
       .row { display:flex; gap: 12px; }
       .row > div { flex:1; }
+
       .hint { font-size: 12px; color:#666; margin-top: 6px; }
-      .btn { margin-top: 18px; width:100%; padding: 12px 14px; border:0; border-radius: 12px; font-weight:700; cursor:pointer; background:#111; color:#fff; font-size: 15px; }
+
+      .btn {
+        margin-top: 18px;
+        width:100%;
+        padding: 12px 14px;
+        border:0;
+        border-radius: 12px;
+        font-weight:700;
+        cursor:pointer;
+        background:#111;
+        color:#fff;
+        font-size: 15px;
+      }
+
       .btn[disabled]{ opacity:.6; cursor:not-allowed; }
+
       .msg { margin-top: 14px; padding: 12px; border-radius: 10px; display:none; }
       .msg.ok { background:#e9f8ef; color:#0f5132; border:1px solid #b7ebc6; }
       .msg.err { background:#fdecec; color:#842029; border:1px solid #f5c2c7; }
 
-      .footer { margin-top: 14px; font-size: 12px; color:#666; text-align:center; }
-      .footerLinks{
-        margin-top: 10px;
-        display:flex;
-        justify-content:center;
-        gap:14px;
-        flex-wrap:wrap;
-      }
-      .footerLinks a{
+      .footer {
+        margin-top: 14px;
+        font-size: 12px;
         color:#666;
-        text-decoration: underline;
-        text-underline-offset: 3px;
       }
-      .footerLinks a:hover{ color:#374151; }
     </style>
   </head>
+
   <body>
     <div class="wrap">
       <h1>Book a courier job</h1>
@@ -85,11 +121,6 @@
 
         <div class="footer">
           By proceeding you agree to our terms and policies.
-          <div class="footerLinks" aria-label="Legal links">
-            <a href="/terms.html">Terms &amp; Conditions</a>
-            <a href="/refund-policy.html">Refund Policy</a>
-            <a href="/privacy-policy.html">Privacy Policy</a>
-          </div>
         </div>
       </form>
     </div>
@@ -179,8 +210,7 @@
 
             if (avail.json.available !== true) {
               setBusy(false, 'Book & Pay');
-              const msg = avail.json.message || 'That time slot is no longer available. Please choose a different time.';
-              alert(msg);
+              alert(avail.json.message || 'That time slot is no longer available. Please choose a different time.');
               return;
             }
 
