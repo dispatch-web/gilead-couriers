@@ -138,6 +138,7 @@
       display:flex;
       gap:12px;
       flex-wrap:wrap;
+      align-items:center;
     }
 
     .btnPrimary{
@@ -147,6 +148,7 @@
       padding:14px 20px;
       border-radius:12px;
       border:1px solid rgba(0,0,0,0.18);
+      display:inline-block;
     }
 
     .btnGhost{
@@ -156,11 +158,77 @@
       padding:14px 18px;
       border-radius:12px;
       border:1px solid rgba(255,255,255,0.25);
+      display:inline-block;
+    }
+
+    /* NEW: small reassurance line under CTA */
+    .reassure{
+      margin-top:10px;
+      font-size:12px;
+      color:rgba(255,255,255,0.82);
+      letter-spacing:0.2px;
     }
 
     main{ padding:36px 0; }
 
-    /* FOOTER (WITH LEGAL LINKS) */
+    /* NEW: lightweight sections (no redesign) */
+    .sectionTitle{
+      margin:0 0 10px;
+      font-size:14px;
+      letter-spacing:0.6px;
+      text-transform:uppercase;
+      color:var(--navy);
+      font-weight:900;
+    }
+
+    .panel{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.06);
+      padding:18px;
+    }
+
+    .muted{
+      color:var(--muted);
+      line-height:1.6;
+      margin:0;
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:16px;
+    }
+
+    .howSteps{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:12px;
+      margin-top:12px;
+    }
+
+    .step{
+      border:1px solid var(--line);
+      border-radius: 12px;
+      padding:12px;
+      background: #fff;
+    }
+
+    .step strong{
+      display:block;
+      margin:0 0 6px;
+      color:var(--navy);
+      font-size:13px;
+    }
+
+    .step span{
+      display:block;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+    }
+
     footer{
       padding:22px 0 36px;
       font-size:12px;
@@ -168,28 +236,12 @@
       text-align:center;
     }
 
-    .footerLinks{
-      margin-top:10px;
-      display:flex;
-      justify-content:center;
-      gap:14px;
-      flex-wrap:wrap;
-    }
-
-    .footerLinks a{
-      color: var(--muted);
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-
-    .footerLinks a:hover{
-      color: #374151;
-    }
-
     @media(max-width:900px){
       .heroInner{ grid-template-columns:1fr; }
       .hero h2{ font-size:36px; }
       .brand img{ height:54px; }
+      .grid2{ grid-template-columns: 1fr; }
+      .howSteps{ grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -222,22 +274,59 @@
           Time-critical, discreet courier movements across the UK for high-trust,
           regulated and professional clients.
         </p>
+
         <div class="heroActions">
           <a class="btnPrimary" href="/book.html">Book a Courier</a>
           <a class="btnGhost" href="/about.html">About Us</a>
         </div>
+
+        <!-- NEW: reassurance line (no redesign) -->
+        <div class="reassure">Fully insured. Direct A-to-B only. No subcontracting.</div>
       </div>
     </div>
   </div>
 </section>
 
+<main>
+  <div class="wrap">
+
+    <!-- NEW: Trusted by section -->
+    <div class="grid2">
+      <div class="panel">
+        <h3 class="sectionTitle">Trusted by professional clients</h3>
+        <p class="muted">
+          We support legal, engineering, aerospace, medical-supply and professional services clients across the UK.
+          Private and small-business courier requirements are also supported where discretion and reliability matter.
+        </p>
+      </div>
+
+      <!-- NEW: How it works section -->
+      <div class="panel">
+        <h3 class="sectionTitle">How it works</h3>
+        <p class="muted">A simple, controlled process designed for time-critical work.</p>
+
+        <div class="howSteps">
+          <div class="step">
+            <strong>1) Book</strong>
+            <span>Submit job details securely using the booking form.</span>
+          </div>
+          <div class="step">
+            <strong>2) Confirm</strong>
+            <span>We validate timing, requirements and route feasibility.</span>
+          </div>
+          <div class="step">
+            <strong>3) Deliver</strong>
+            <span>Direct A-to-B courier delivery with confirmation on completion.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
 <footer>
   © <span id="y"></span> Gilead Couriers
-  <div class="footerLinks" aria-label="Site links">
-    <a href="/terms.html">Terms &amp; Conditions</a>
-    <a href="/refund-policy.html">Refund Policy</a>
-    <a href="/privacy-policy.html">Privacy Policy</a>
-  </div>
 </footer>
 
 <script>
