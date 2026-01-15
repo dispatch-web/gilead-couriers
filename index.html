@@ -56,14 +56,12 @@
       gap:16px;
     }
 
-    /* LOGO MADE LARGER */
     .brand img{
       height:64px;
       width:auto;
       display:block;
     }
 
-    /* STRAPLINE ONLY (NO DUPLICATE BUSINESS NAME) */
     .brandText p{
       margin:0;
       font-size:14px;
@@ -109,7 +107,7 @@
       background-size:cover;
       background-position:center;
       color:#fff;
-      padding:70px 0 64px;
+      padding:62px 0 56px; /* tightened slightly to reduce scroll */
     }
 
     .heroInner{
@@ -127,7 +125,7 @@
     }
 
     .hero p{
-      margin:0 0 22px;
+      margin:0 0 18px; /* slightly tighter */
       font-size:16px;
       color:rgba(255,255,255,0.9);
       line-height:1.6;
@@ -161,19 +159,17 @@
       display:inline-block;
     }
 
-    /* NEW: small reassurance line under CTA */
     .reassure{
-      margin-top:10px;
+      margin-top:8px; /* tighter */
       font-size:12px;
       color:rgba(255,255,255,0.82);
       letter-spacing:0.2px;
     }
 
-    main{ padding:36px 0; }
+    main{ padding:18px 0; } /* reduced so it fits better */
 
-    /* NEW: lightweight sections (no redesign) */
     .sectionTitle{
-      margin:0 0 10px;
+      margin:0 0 8px;
       font-size:14px;
       letter-spacing:0.6px;
       text-transform:uppercase;
@@ -186,7 +182,7 @@
       border:1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.06);
-      padding:18px;
+      padding:12px 14px; /* shallower */
     }
 
     .muted{
@@ -198,26 +194,27 @@
     .grid2{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:16px;
+      gap:12px; /* slightly tighter */
+      align-items:stretch;
     }
 
     .howSteps{
       display:grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap:12px;
-      margin-top:12px;
+      gap:10px;
+      margin-top:10px; /* tighter */
     }
 
     .step{
       border:1px solid var(--line);
       border-radius: 12px;
-      padding:12px;
+      padding:10px 10px; /* shallower */
       background: #fff;
     }
 
     .step strong{
       display:block;
-      margin:0 0 6px;
+      margin:0 0 4px; /* tighter */
       color:var(--navy);
       font-size:13px;
     }
@@ -226,14 +223,32 @@
       display:block;
       color:var(--muted);
       font-size:13px;
-      line-height:1.5;
+      line-height:1.45; /* slightly tighter without changing font size */
     }
 
     footer{
-      padding:22px 0 36px;
+      padding:16px 0 28px; /* modest */
       font-size:12px;
       color:var(--muted);
       text-align:center;
+    }
+
+    .footerLinks{
+      margin-top:8px;
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+
+    .footerLinks a{
+      color:var(--muted);
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+
+    .footerLinks a:hover{
+      color:var(--navy);
     }
 
     @media(max-width:900px){
@@ -242,6 +257,7 @@
       .brand img{ height:54px; }
       .grid2{ grid-template-columns: 1fr; }
       .howSteps{ grid-template-columns: 1fr; }
+      main{ padding:16px 0; }
     }
   </style>
 </head>
@@ -280,7 +296,6 @@
           <a class="btnGhost" href="/about.html">About Us</a>
         </div>
 
-        <!-- NEW: reassurance line (no redesign) -->
         <div class="reassure">Fully insured. Direct A-to-B only. No subcontracting.</div>
       </div>
     </div>
@@ -290,7 +305,6 @@
 <main>
   <div class="wrap">
 
-    <!-- NEW: Trusted by section -->
     <div class="grid2">
       <div class="panel">
         <h3 class="sectionTitle">Trusted by professional clients</h3>
@@ -300,7 +314,6 @@
         </p>
       </div>
 
-      <!-- NEW: How it works section -->
       <div class="panel">
         <h3 class="sectionTitle">How it works</h3>
         <p class="muted">A simple, controlled process designed for time-critical work.</p>
@@ -327,6 +340,13 @@
 
 <footer>
   © <span id="y"></span> Gilead Couriers
+  <div class="footerLinks">
+    <a href="/terms.html">Terms</a>
+    <span>·</span>
+    <a href="/refund-policy.html">Refund Policy</a>
+    <span>·</span>
+    <a href="/privacy-policy.html">Privacy Policy</a>
+  </div>
 </footer>
 
 <script>
