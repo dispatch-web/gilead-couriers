@@ -36,11 +36,11 @@
       padding:0 20px;
     }
 
-    /* NEW: full-width wrapper used ONLY for the new section */
+    /* FULL-WIDTH WRAPPER – MINIMAL EDGE PADDING */
     .wrapFull{
       width:100%;
       margin:0 auto;
-      padding:0 20px;
+      padding:0 8px; /* as close to edges as practical */
     }
 
     header{
@@ -173,52 +173,60 @@
       letter-spacing:0.2px;
     }
 
-    main{ padding:18px 0; }
-
-    .sectionTitle{
-      margin:0 0 8px;
-      font-size:14px;
-      letter-spacing:0.6px;
-      text-transform:uppercase;
-      color:var(--navy);
-      font-weight:900;
-    }
+    main{ padding:14px 0; }
 
     .panel{
       background: var(--card);
       border:1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.06);
-      padding:12px 14px; /* shallow */
+      padding:10px 12px; /* shallower again */
     }
 
     .muted{
       color:var(--muted);
-      line-height:1.6;
+      line-height:1.55;
       margin:0;
+      font-size:14px;
     }
 
-    /* NEW: make the grid truly full width */
     .grid2{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:12px;
-      align-items:stretch;
+      gap:10px;
       width:100%;
+    }
+
+    /* INLINE SECTION TITLE */
+    .inlineTitle{
+      font-size:14px;
+      letter-spacing:0.6px;
+      text-transform:uppercase;
+      color:var(--navy);
+      font-weight:900;
+      margin:0 0 6px;
+    }
+
+    .inlineTitle span{
+      font-weight:400;
+      text-transform:none;
+      letter-spacing:0;
+      color:var(--muted);
+      margin-left:6px;
     }
 
     .howSteps{
       display:grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap:10px;
-      margin-top:10px;
+      gap:8px;
+      margin-top:8px;
     }
 
     .step{
       border:1px solid var(--line);
       border-radius: 12px;
-      padding:10px 10px; /* shallow */
-      background: #fff;
+      padding:8px 8px;
+      background:#fff;
     }
 
     .step strong{
@@ -232,7 +240,7 @@
       display:block;
       color:var(--muted);
       font-size:13px;
-      line-height:1.45;
+      line-height:1.4;
     }
 
     footer{
@@ -264,9 +272,10 @@
       .heroInner{ grid-template-columns:1fr; }
       .hero h2{ font-size:36px; }
       .brand img{ height:54px; }
-      .grid2{ grid-template-columns: 1fr; }
-      .howSteps{ grid-template-columns: 1fr; }
-      main{ padding:16px 0; }
+      .grid2{ grid-template-columns:1fr; }
+      .howSteps{ grid-template-columns:1fr; }
+      main{ padding:12px 0; }
+      .wrapFull{ padding:0 6px; }
     }
   </style>
 </head>
@@ -312,11 +321,14 @@
 </section>
 
 <main>
-  <!-- FULL-WIDTH SECTION (matches hero background width) -->
   <div class="wrapFull">
     <div class="grid2">
+
       <div class="panel">
-        <h3 class="sectionTitle">Trusted by professional clients</h3>
+        <div class="inlineTitle">
+          Trusted by professional clients
+          <span>across regulated and high-trust sectors</span>
+        </div>
         <p class="muted">
           We support legal, engineering, aerospace, medical-supply and professional services clients across the UK.
           Private and small-business courier requirements are also supported where discretion and reliability matter.
@@ -324,8 +336,10 @@
       </div>
 
       <div class="panel">
-        <h3 class="sectionTitle">How it works</h3>
-        <p class="muted">A simple, controlled process designed for time-critical work.</p>
+        <div class="inlineTitle">
+          How it works
+          <span>A simple, controlled process designed for time-critical work.</span>
+        </div>
 
         <div class="howSteps">
           <div class="step">
@@ -342,6 +356,7 @@
           </div>
         </div>
       </div>
+
     </div>
   </div>
 </main>
