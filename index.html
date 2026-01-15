@@ -36,6 +36,13 @@
       padding:0 20px;
     }
 
+    /* NEW: full-width wrapper used ONLY for the new section */
+    .wrapFull{
+      width:100%;
+      margin:0 auto;
+      padding:0 20px;
+    }
+
     header{
       background: linear-gradient(180deg, var(--navy), var(--navy-dark));
       color:#fff;
@@ -107,7 +114,7 @@
       background-size:cover;
       background-position:center;
       color:#fff;
-      padding:62px 0 56px; /* tightened slightly to reduce scroll */
+      padding:62px 0 56px;
     }
 
     .heroInner{
@@ -125,7 +132,7 @@
     }
 
     .hero p{
-      margin:0 0 18px; /* slightly tighter */
+      margin:0 0 18px;
       font-size:16px;
       color:rgba(255,255,255,0.9);
       line-height:1.6;
@@ -160,13 +167,13 @@
     }
 
     .reassure{
-      margin-top:8px; /* tighter */
+      margin-top:8px;
       font-size:12px;
       color:rgba(255,255,255,0.82);
       letter-spacing:0.2px;
     }
 
-    main{ padding:18px 0; } /* reduced so it fits better */
+    main{ padding:18px 0; }
 
     .sectionTitle{
       margin:0 0 8px;
@@ -182,7 +189,7 @@
       border:1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.06);
-      padding:12px 14px; /* shallower */
+      padding:12px 14px; /* shallow */
     }
 
     .muted{
@@ -191,30 +198,32 @@
       margin:0;
     }
 
+    /* NEW: make the grid truly full width */
     .grid2{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:12px; /* slightly tighter */
+      gap:12px;
       align-items:stretch;
+      width:100%;
     }
 
     .howSteps{
       display:grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap:10px;
-      margin-top:10px; /* tighter */
+      margin-top:10px;
     }
 
     .step{
       border:1px solid var(--line);
       border-radius: 12px;
-      padding:10px 10px; /* shallower */
+      padding:10px 10px; /* shallow */
       background: #fff;
     }
 
     .step strong{
       display:block;
-      margin:0 0 4px; /* tighter */
+      margin:0 0 4px;
       color:var(--navy);
       font-size:13px;
     }
@@ -223,11 +232,11 @@
       display:block;
       color:var(--muted);
       font-size:13px;
-      line-height:1.45; /* slightly tighter without changing font size */
+      line-height:1.45;
     }
 
     footer{
-      padding:16px 0 28px; /* modest */
+      padding:16px 0 28px;
       font-size:12px;
       color:var(--muted);
       text-align:center;
@@ -303,8 +312,8 @@
 </section>
 
 <main>
-  <div class="wrap">
-
+  <!-- FULL-WIDTH SECTION (matches hero background width) -->
+  <div class="wrapFull">
     <div class="grid2">
       <div class="panel">
         <h3 class="sectionTitle">Trusted by professional clients</h3>
@@ -334,7 +343,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </main>
 
