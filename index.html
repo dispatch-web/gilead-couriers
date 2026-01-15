@@ -36,11 +36,10 @@
       padding:0 20px;
     }
 
-    /* FULL-WIDTH WRAPPER – MINIMAL EDGE PADDING */
     .wrapFull{
       width:100%;
       margin:0 auto;
-      padding:0 8px; /* as close to edges as practical */
+      padding:0 8px;
     }
 
     header{
@@ -82,7 +81,6 @@
       display:flex;
       align-items:center;
       gap:14px;
-      flex-wrap:wrap;
     }
 
     .navlink{
@@ -143,7 +141,6 @@
       display:flex;
       gap:12px;
       flex-wrap:wrap;
-      align-items:center;
     }
 
     .btnPrimary{
@@ -153,7 +150,6 @@
       padding:14px 20px;
       border-radius:12px;
       border:1px solid rgba(0,0,0,0.18);
-      display:inline-block;
     }
 
     .btnGhost{
@@ -163,108 +159,44 @@
       padding:14px 18px;
       border-radius:12px;
       border:1px solid rgba(255,255,255,0.25);
-      display:inline-block;
-    }
-
-    .reassure{
-      margin-top:8px;
-      font-size:12px;
-      color:rgba(255,255,255,0.82);
-      letter-spacing:0.2px;
     }
 
     main{ padding:14px 0; }
 
-    .panel{
-      background: var(--card);
-      border:1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: 0 10px 22px rgba(0,0,0,0.06);
-      padding:10px 12px; /* shallower again */
-    }
-
-    .muted{
-      color:var(--muted);
-      line-height:1.55;
-      margin:0;
-      font-size:14px;
-    }
-
-    .grid2{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-      width:100%;
-    }
-
-    /* INLINE SECTION TITLE */
-    .inlineTitle{
-      font-size:14px;
-      letter-spacing:0.6px;
-      text-transform:uppercase;
-      color:var(--navy);
-      font-weight:900;
-      margin:0 0 6px;
-    }
-
-    .inlineTitle span{
-      font-weight:400;
-      text-transform:none;
-      letter-spacing:0;
-      color:var(--muted);
-      margin-left:6px;
-    }
-
-    .howSteps{
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap:8px;
-      margin-top:8px;
-    }
-
-    .step{
-      border:1px solid var(--line);
-      border-radius: 12px;
-      padding:8px 8px;
-      background:#fff;
-    }
-
-    .step strong{
-      display:block;
-      margin:0 0 4px;
-      color:var(--navy);
-      font-size:13px;
-    }
-
-    .step span{
-      display:block;
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.4;
-    }
-
     footer{
-      padding:16px 0 28px;
+      padding:18px 0 26px;
       font-size:12px;
       color:var(--muted);
-      text-align:center;
     }
 
-    .footerLinks{
-      margin-top:8px;
+    /* NEW FOOTER LAYOUT */
+    .footerRow{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items:center;
+      max-width:1100px;
+      margin:0 auto;
+      padding:0 20px;
+    }
+
+    .footerLeft{
+      justify-self:start;
+    }
+
+    .footerCenter{
+      justify-self:center;
       display:flex;
       gap:10px;
-      justify-content:center;
       flex-wrap:wrap;
     }
 
-    .footerLinks a{
+    .footerCenter a{
       color:var(--muted);
       text-decoration:underline;
       text-underline-offset:2px;
     }
 
-    .footerLinks a:hover{
+    .footerCenter a:hover{
       color:var(--navy);
     }
 
@@ -272,10 +204,17 @@
       .heroInner{ grid-template-columns:1fr; }
       .hero h2{ font-size:36px; }
       .brand img{ height:54px; }
-      .grid2{ grid-template-columns:1fr; }
-      .howSteps{ grid-template-columns:1fr; }
-      main{ padding:12px 0; }
-      .wrapFull{ padding:0 6px; }
+
+      .footerRow{
+        grid-template-columns:1fr;
+        gap:10px;
+        text-align:center;
+      }
+
+      .footerLeft,
+      .footerCenter{
+        justify-self:center;
+      }
     }
   </style>
 </head>
@@ -313,62 +252,26 @@
           <a class="btnPrimary" href="/book.html">Book a Courier</a>
           <a class="btnGhost" href="/about.html">About Us</a>
         </div>
-
-        <div class="reassure">Fully insured. Direct A-to-B only. No subcontracting.</div>
       </div>
     </div>
   </div>
 </section>
 
-<main>
-  <div class="wrapFull">
-    <div class="grid2">
-
-      <div class="panel">
-        <div class="inlineTitle">
-          Trusted by professional clients
-          <span>across regulated and high-trust sectors</span>
-        </div>
-        <p class="muted">
-          We support legal, engineering, aerospace, medical-supply and professional services clients across the UK.
-          Private and small-business courier requirements are also supported where discretion and reliability matter.
-        </p>
-      </div>
-
-      <div class="panel">
-        <div class="inlineTitle">
-          How it works
-          <span>A simple, controlled process designed for time-critical work.</span>
-        </div>
-
-        <div class="howSteps">
-          <div class="step">
-            <strong>1) Book</strong>
-            <span>Submit job details securely using the booking form.</span>
-          </div>
-          <div class="step">
-            <strong>2) Confirm</strong>
-            <span>We validate timing, requirements and route feasibility.</span>
-          </div>
-          <div class="step">
-            <strong>3) Deliver</strong>
-            <span>Direct A-to-B courier delivery with confirmation on completion.</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</main>
-
 <footer>
-  © <span id="y"></span> Gilead Couriers
-  <div class="footerLinks">
-    <a href="/terms.html">Terms</a>
-    <span>·</span>
-    <a href="/refund-policy.html">Refund Policy</a>
-    <span>·</span>
-    <a href="/privacy-policy.html">Privacy Policy</a>
+  <div class="footerRow">
+    <div class="footerLeft">
+      © <span id="y"></span> Gilead Couriers
+    </div>
+
+    <div class="footerCenter">
+      <a href="/terms.html">Terms</a>
+      <span>·</span>
+      <a href="/refund-policy.html">Refund Policy</a>
+      <span>·</span>
+      <a href="/privacy-policy.html">Privacy Policy</a>
+    </div>
+
+    <div></div>
   </div>
 </footer>
 
