@@ -6,42 +6,40 @@
     <title>Gilead Couriers — Book a Job</title>
 
     <style>
+      /* PAGE-WIDE HERO BACKGROUND */
       body {
         font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
         margin: 0;
         padding: 24px;
-        background: #f6f7fb;
         color:#111;
-      }
-
-      /* RESTORED HERO BACKGROUND */
-      .wrap {
-        max-width: 760px;
-        margin: 0 auto;
         background:
-          linear-gradient(180deg, rgba(11,31,59,0.90), rgba(11,31,59,0.60)),
+          linear-gradient(180deg, rgba(11,31,59,0.92), rgba(11,31,59,0.65)),
           url("/app/images/hero-courier.jpg");
         background-size: cover;
         background-position: center;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 10px 30px rgba(0,0,0,.06);
-        border: 1px solid rgba(0,0,0,0.06);
+        background-attachment: fixed;
       }
 
+      .wrap {
+        max-width: 760px;
+        margin: 0 auto;
+      }
+
+      /* FORM CARD */
       .card {
         background: rgba(255,255,255,0.94);
         border-radius: 12px;
-        padding: 18px 16px;
-        border: 1px solid rgba(255,255,255,0.55);
-        box-shadow: 0 10px 22px rgba(0,0,0,0.08);
-        backdrop-filter: blur(2px);
+        padding: 20px;
+        border: 1px solid rgba(255,255,255,0.6);
+        box-shadow: 0 14px 34px rgba(0,0,0,0.18);
+        backdrop-filter: blur(3px);
       }
 
       h1 { margin: 0 0 8px; font-size: 24px; }
       p.sub { margin: 0 0 20px; color:#444; }
 
       label { display:block; font-weight:600; margin: 14px 0 6px; }
+
       input, textarea {
         width:100%;
         box-sizing:border-box;
@@ -51,6 +49,7 @@
         font-size: 14px;
         background: #fff;
       }
+
       textarea { min-height: 76px; resize: vertical; }
 
       .row { display:flex; gap: 12px; }
@@ -70,23 +69,20 @@
         color:#fff;
         font-size: 15px;
       }
-      .btn[disabled]{ opacity:.6; cursor:not-allowed; }
-
-      .msg { margin-top: 14px; padding: 12px; border-radius: 10px; display:none; }
-      .msg.ok { background:#e9f8ef; color:#0f5132; border:1px solid #b7ebc6; }
-      .msg.err { background:#fdecec; color:#842029; border:1px solid #f5c2c7; }
 
       .footer {
         margin-top: 14px;
         font-size: 12px;
-        color:#666;
+        color:#555;
       }
-      .footer a{
+
+      .footer a {
         text-decoration: underline;
         text-underline-offset: 2px;
         color: inherit;
       }
-      .footer a:hover{
+
+      .footer a:hover {
         color:#0B1F3B;
       }
     </style>
@@ -96,34 +92,75 @@
     <div class="wrap">
       <div class="card">
         <h1>Book a courier job</h1>
-        <p class="sub">Fixed fee within 20 miles. Long-distance is priced by mileage + rules. Secure payment via Stripe.</p>
+        <p class="sub">
+          Fixed fee within 20 miles. Long-distance is priced by mileage + rules.
+          Secure payment via Stripe.
+        </p>
 
         <form id="bookingForm">
+          <!-- COMPANY -->
           <label for="company">Company / Business name *</label>
-          <input id="company" name="company" type="text" required placeholder="e.g. ABC Solicitors LLP" />
+          <input
+            id="company"
+            name="company"
+            type="text"
+            required
+            placeholder="e.g. ABC Solicitors LLP"
+          />
 
+          <!-- PICKUP -->
           <label for="pickup">Pickup address *</label>
-          <textarea id="pickup" name="pickup" required></textarea>
+          <textarea
+            id="pickup"
+            name="pickup"
+            required
+            placeholder="e.g. 10 Downing Street, London SW1A 2AA"
+          ></textarea>
 
+          <!-- DROPOFF -->
           <label for="dropoff">Drop-off address *</label>
-          <textarea id="dropoff" name="dropoff" required></textarea>
+          <textarea
+            id="dropoff"
+            name="dropoff"
+            required
+            placeholder="e.g. 1 St Peter’s Square, Manchester M2 3AE"
+          ></textarea>
 
           <div class="row">
             <div>
               <label for="miles">Estimated miles *</label>
-              <input id="miles" name="miles" type="number" min="1" step="1" required />
+              <input
+                id="miles"
+                name="miles"
+                type="number"
+                min="1"
+                step="1"
+                required
+                placeholder="e.g. 234"
+              />
+              <div class="hint">
+                Enter an approximate mileage for now (routing automation comes later).
+              </div>
             </div>
+
             <div>
               <label for="email">Your email address *</label>
-              <input id="email" name="email" type="email" required />
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                placeholder="you@example.com"
+              />
             </div>
           </div>
 
           <div class="row">
             <div>
-              <label for="whenDate">When is this job needed? *</label>
+              <label for="whenDate">When is this job needed? (date) *</label>
               <input id="whenDate" name="whenDate" type="date" required />
             </div>
+
             <div>
               <label for="whenTime">Time needed by *</label>
               <input id="whenTime" name="whenTime" type="time" required />
@@ -131,7 +168,11 @@
           </div>
 
           <label for="notes">Notes (optional)</label>
-          <textarea id="notes" name="notes"></textarea>
+          <textarea
+            id="notes"
+            name="notes"
+            placeholder="Fragile items, access instructions, parking, contact name, etc."
+          ></textarea>
 
           <button class="btn" type="submit">Book &amp; Pay</button>
 
