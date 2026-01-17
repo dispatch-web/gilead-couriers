@@ -9,29 +9,37 @@
         font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
         margin: 0;
         padding: 24px;
-        background:
-          linear-gradient(rgba(245,247,251,0.94), rgba(245,247,251,0.94)),
-          url("/app/images/hero-courier.jpg");
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
+        background: #f6f7fb;
         color:#111;
       }
 
       .wrap {
         max-width: 760px;
         margin: 0 auto;
-        background: #EEF2F8;
+        background:
+          linear-gradient(180deg, rgba(11,31,59,0.88), rgba(11,31,59,0.55)),
+          url("/app/images/hero-courier.jpg");
+        background-size: cover;
+        background-position: center;
         border-radius: 12px;
         padding: 20px;
         box-shadow: 0 10px 30px rgba(0,0,0,.06);
+        border: 1px solid rgba(0,0,0,0.06);
+      }
+
+      .card {
+        background: rgba(255,255,255,0.92);
+        border-radius: 12px;
+        padding: 18px 16px;
+        border: 1px solid rgba(255,255,255,0.55);
+        box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+        backdrop-filter: blur(2px);
       }
 
       h1 { margin: 0 0 8px; font-size: 24px; }
       p.sub { margin: 0 0 20px; color:#444; }
 
       label { display:block; font-weight:600; margin: 14px 0 6px; }
-
       input, textarea {
         width:100%;
         box-sizing:border-box;
@@ -39,9 +47,8 @@
         border: 1px solid #d7dbe7;
         border-radius: 10px;
         font-size: 14px;
-        background:#fff;
+        background: #fff;
       }
-
       textarea { min-height: 76px; resize: vertical; }
 
       .row { display:flex; gap: 12px; }
@@ -61,68 +68,72 @@
         color:#fff;
         font-size: 15px;
       }
-
       .btn[disabled]{ opacity:.6; cursor:not-allowed; }
 
       .msg { margin-top: 14px; padding: 12px; border-radius: 10px; display:none; }
       .msg.ok { background:#e9f8ef; color:#0f5132; border:1px solid #b7ebc6; }
       .msg.err { background:#fdecec; color:#842029; border:1px solid #f5c2c7; }
 
-      .footer {
-        margin-top: 14px;
-        font-size: 12px;
-        color:#666;
-      }
+      .footer { margin-top: 14px; font-size: 12px; color:#666; }
+      .footer a{ text-decoration: underline; text-underline-offset: 2px; color: inherit; }
+      .footer a:hover{ color:#0B1F3B; }
     </style>
   </head>
 
   <body>
     <div class="wrap">
-      <h1>Book a courier job</h1>
-      <p class="sub">Fixed fee within 20 miles. Long-distance is priced by mileage + rules. Secure payment via Stripe.</p>
+      <div class="card">
+        <h1>Book a courier job</h1>
+        <p class="sub">Fixed fee within 20 miles. Long-distance is priced by mileage + rules. Secure payment via Stripe.</p>
 
-      <form id="bookingForm">
-        <label for="pickup">Pickup address *</label>
-        <textarea id="pickup" name="pickup" required placeholder="e.g. 10 Downing Street, London SW1A 2AA"></textarea>
+        <form id="bookingForm">
+          <!-- NEW FIELD (REQUIRED): Company / Business Name -->
+          <label for="company">Company / Business name *</label>
+          <input id="company" name="company" type="text" required placeholder="e.g. ABC Solicitors LLP" />
 
-        <label for="dropoff">Drop-off address *</label>
-        <textarea id="dropoff" name="dropoff" required placeholder="e.g. 1 St Peter’s Square, Manchester M2 3AE"></textarea>
+          <label for="pickup">Pickup address *</label>
+          <textarea id="pickup" name="pickup" required placeholder="e.g. 10 Downing Street, London SW1A 2AA"></textarea>
 
-        <div class="row">
-          <div>
-            <label for="miles">Estimated miles *</label>
-            <input id="miles" name="miles" type="number" min="1" step="1" required placeholder="e.g. 234" />
-            <div class="hint">Enter an approximate mileage for now (routing automation comes later).</div>
+          <label for="dropoff">Drop-off address *</label>
+          <textarea id="dropoff" name="dropoff" required placeholder="e.g. 1 St Peter’s Square, Manchester M2 3AE"></textarea>
+
+          <div class="row">
+            <div>
+              <label for="miles">Estimated miles *</label>
+              <input id="miles" name="miles" type="number" min="1" step="1" required placeholder="e.g. 234" />
+              <div class="hint">Enter an approximate mileage for now (routing automation comes later).</div>
+            </div>
+            <div>
+              <label for="email">Your email address *</label>
+              <input id="email" name="email" type="email" required placeholder="you@example.com" />
+            </div>
           </div>
-          <div>
-            <label for="email">Your email address *</label>
-            <input id="email" name="email" type="email" required placeholder="you@example.com" />
+
+          <div class="row">
+            <div>
+              <label for="whenDate">When is this job needed? (date) *</label>
+              <input id="whenDate" name="whenDate" type="date" required />
+            </div>
+            <div>
+              <label for="whenTime">Time needed by *</label>
+              <input id="whenTime" name="whenTime" type="time" required />
+            </div>
           </div>
-        </div>
 
-        <div class="row">
-          <div>
-            <label for="whenDate">When is this job needed? (date) *</label>
-            <input id="whenDate" name="whenDate" type="date" required />
+          <label for="notes">Notes (optional)</label>
+          <textarea id="notes" name="notes" placeholder="Fragile items, access instructions, parking, contact name, etc."></textarea>
+
+          <button class="btn" id="payBtn" type="submit">Book &amp; Pay</button>
+
+          <div id="msgOk" class="msg ok"></div>
+          <div id="msgErr" class="msg err"></div>
+
+          <div class="footer">
+            By proceeding you agree to our
+            <a href="/terms.html">Terms</a>, <a href="/refund-policy.html">Refund Policy</a> and <a href="/privacy-policy.html">Privacy Policy</a>.
           </div>
-          <div>
-            <label for="whenTime">Time needed by *</label>
-            <input id="whenTime" name="whenTime" type="time" required />
-          </div>
-        </div>
-
-        <label for="notes">Notes (optional)</label>
-        <textarea id="notes" name="notes" placeholder="Fragile items, access instructions, parking, contact name, etc."></textarea>
-
-        <button class="btn" id="payBtn" type="submit">Book &amp; Pay</button>
-
-        <div id="msgOk" class="msg ok"></div>
-        <div id="msgErr" class="msg err"></div>
-
-        <div class="footer">
-          By proceeding you agree to our terms and policies.
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
 
     <script>
@@ -165,6 +176,7 @@
           msgOk.style.display = 'none';
           msgErr.style.display = 'none';
 
+          const company = v('company');
           const pickup = v('pickup');
           const dropoff = v('dropoff');
           const miles = v('miles');
@@ -173,7 +185,7 @@
           const whenTime = v('whenTime');
           const notes = v('notes');
 
-          if (!pickup || !dropoff || !miles || !email || !whenDate || !whenTime) {
+          if (!company || !pickup || !dropoff || !miles || !email || !whenDate || !whenTime) {
             showErr('Missing required fields to check availability.');
             return;
           }
@@ -185,12 +197,14 @@
           }
 
           try {
+            // 1) Availability check
             setBusy(true, 'Checking availability…');
 
             const availResp = await fetch('/api/availability', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
+                company,
                 pickup,
                 dropoff,
                 miles: String(milesNum),
@@ -210,16 +224,19 @@
 
             if (avail.json.available !== true) {
               setBusy(false, 'Book & Pay');
-              alert(avail.json.message || 'That time slot is no longer available. Please choose a different time.');
+              const msg = avail.json.message || 'That time slot is no longer available. Please choose a different time.';
+              alert(msg);
               return;
             }
 
+            // 2) Create Stripe checkout session (v2 route)
             setBusy(true, 'Creating checkout session…');
 
             const checkoutResp = await fetch('/api/stripe/create-checkout-session-v2', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
+                company,
                 pickup,
                 dropoff,
                 miles: String(milesNum),
@@ -232,9 +249,15 @@
 
             const checkout = await safeJson(checkoutResp);
 
-            if (!checkout.ok || !checkout.json || !checkout.json.url) {
+            if (!checkout.ok || !checkout.json) {
               setBusy(false, 'Book & Pay');
               showErr('Unable to create checkout session. Please try again.');
+              return;
+            }
+
+            if (!checkout.json.url) {
+              setBusy(false, 'Book & Pay');
+              showErr(checkout.json.error || 'Unable to create checkout session. Please try again.');
               return;
             }
 
