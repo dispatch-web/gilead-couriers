@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Gilead Couriers — Book a Job</title>
+
     <style>
       body {
         font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
@@ -13,11 +14,12 @@
         color:#111;
       }
 
+      /* RESTORED HERO BACKGROUND */
       .wrap {
         max-width: 760px;
         margin: 0 auto;
         background:
-          linear-gradient(180deg, rgba(11,31,59,0.88), rgba(11,31,59,0.55)),
+          linear-gradient(180deg, rgba(11,31,59,0.90), rgba(11,31,59,0.60)),
           url("/app/images/hero-courier.jpg");
         background-size: cover;
         background-position: center;
@@ -28,7 +30,7 @@
       }
 
       .card {
-        background: rgba(255,255,255,0.92);
+        background: rgba(255,255,255,0.94);
         border-radius: 12px;
         padding: 18px 16px;
         border: 1px solid rgba(255,255,255,0.55);
@@ -74,9 +76,19 @@
       .msg.ok { background:#e9f8ef; color:#0f5132; border:1px solid #b7ebc6; }
       .msg.err { background:#fdecec; color:#842029; border:1px solid #f5c2c7; }
 
-      .footer { margin-top: 14px; font-size: 12px; color:#666; }
-      .footer a{ text-decoration: underline; text-underline-offset: 2px; color: inherit; }
-      .footer a:hover{ color:#0B1F3B; }
+      .footer {
+        margin-top: 14px;
+        font-size: 12px;
+        color:#666;
+      }
+      .footer a{
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        color: inherit;
+      }
+      .footer a:hover{
+        color:#0B1F3B;
+      }
     </style>
   </head>
 
@@ -87,31 +99,29 @@
         <p class="sub">Fixed fee within 20 miles. Long-distance is priced by mileage + rules. Secure payment via Stripe.</p>
 
         <form id="bookingForm">
-          <!-- NEW FIELD (REQUIRED): Company / Business Name -->
           <label for="company">Company / Business name *</label>
           <input id="company" name="company" type="text" required placeholder="e.g. ABC Solicitors LLP" />
 
           <label for="pickup">Pickup address *</label>
-          <textarea id="pickup" name="pickup" required placeholder="e.g. 10 Downing Street, London SW1A 2AA"></textarea>
+          <textarea id="pickup" name="pickup" required></textarea>
 
           <label for="dropoff">Drop-off address *</label>
-          <textarea id="dropoff" name="dropoff" required placeholder="e.g. 1 St Peter’s Square, Manchester M2 3AE"></textarea>
+          <textarea id="dropoff" name="dropoff" required></textarea>
 
           <div class="row">
             <div>
               <label for="miles">Estimated miles *</label>
-              <input id="miles" name="miles" type="number" min="1" step="1" required placeholder="e.g. 234" />
-              <div class="hint">Enter an approximate mileage for now (routing automation comes later).</div>
+              <input id="miles" name="miles" type="number" min="1" step="1" required />
             </div>
             <div>
               <label for="email">Your email address *</label>
-              <input id="email" name="email" type="email" required placeholder="you@example.com" />
+              <input id="email" name="email" type="email" required />
             </div>
           </div>
 
           <div class="row">
             <div>
-              <label for="whenDate">When is this job needed? (date) *</label>
+              <label for="whenDate">When is this job needed? *</label>
               <input id="whenDate" name="whenDate" type="date" required />
             </div>
             <div>
@@ -121,155 +131,18 @@
           </div>
 
           <label for="notes">Notes (optional)</label>
-          <textarea id="notes" name="notes" placeholder="Fragile items, access instructions, parking, contact name, etc."></textarea>
+          <textarea id="notes" name="notes"></textarea>
 
-          <button class="btn" id="payBtn" type="submit">Book &amp; Pay</button>
-
-          <div id="msgOk" class="msg ok"></div>
-          <div id="msgErr" class="msg err"></div>
+          <button class="btn" type="submit">Book &amp; Pay</button>
 
           <div class="footer">
             By proceeding you agree to our
-            <a href="/terms.html">Terms</a>, <a href="/refund-policy.html">Refund Policy</a> and <a href="/privacy-policy.html">Privacy Policy</a>.
+            <a href="/terms.html">Terms</a>,
+            <a href="/refund-policy.html">Refund Policy</a> and
+            <a href="/privacy-policy.html">Privacy Policy</a>.
           </div>
         </form>
       </div>
     </div>
-
-    <script>
-      (function () {
-        const form = document.getElementById('bookingForm');
-        const payBtn = document.getElementById('payBtn');
-        const msgOk = document.getElementById('msgOk');
-        const msgErr = document.getElementById('msgErr');
-
-        function showOk(text) {
-          msgOk.textContent = text;
-          msgOk.style.display = 'block';
-          msgErr.style.display = 'none';
-        }
-
-        function showErr(text) {
-          msgErr.textContent = text;
-          msgErr.style.display = 'block';
-          msgOk.style.display = 'none';
-        }
-
-        function setBusy(isBusy, label) {
-          payBtn.disabled = isBusy;
-          payBtn.textContent = label || (isBusy ? 'Working…' : 'Book & Pay');
-        }
-
-        function v(id) {
-          const el = document.getElementById(id);
-          return (el && typeof el.value === 'string') ? el.value.trim() : '';
-        }
-
-        async function safeJson(resp) {
-          const text = await resp.text();
-          try { return { ok: resp.ok, status: resp.status, json: JSON.parse(text) }; }
-          catch { return { ok: false, status: resp.status, json: null, raw: text }; }
-        }
-
-        form.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          msgOk.style.display = 'none';
-          msgErr.style.display = 'none';
-
-          const company = v('company');
-          const pickup = v('pickup');
-          const dropoff = v('dropoff');
-          const miles = v('miles');
-          const email = v('email');
-          const whenDate = v('whenDate');
-          const whenTime = v('whenTime');
-          const notes = v('notes');
-
-          if (!company || !pickup || !dropoff || !miles || !email || !whenDate || !whenTime) {
-            showErr('Missing required fields to check availability.');
-            return;
-          }
-
-          const milesNum = Number(miles);
-          if (!Number.isFinite(milesNum) || milesNum <= 0) {
-            showErr('Please enter a valid mileage value.');
-            return;
-          }
-
-          try {
-            // 1) Availability check
-            setBusy(true, 'Checking availability…');
-
-            const availResp = await fetch('/api/availability', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                company,
-                pickup,
-                dropoff,
-                miles: String(milesNum),
-                email,
-                whenDate,
-                whenTime
-              })
-            });
-
-            const avail = await safeJson(availResp);
-
-            if (!avail.ok || !avail.json) {
-              setBusy(false, 'Book & Pay');
-              showErr('Unexpected response from scheduling system. Please try again.');
-              return;
-            }
-
-            if (avail.json.available !== true) {
-              setBusy(false, 'Book & Pay');
-              const msg = avail.json.message || 'That time slot is no longer available. Please choose a different time.';
-              alert(msg);
-              return;
-            }
-
-            // 2) Create Stripe checkout session (v2 route)
-            setBusy(true, 'Creating checkout session…');
-
-            const checkoutResp = await fetch('/api/stripe/create-checkout-session-v2', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                company,
-                pickup,
-                dropoff,
-                miles: String(milesNum),
-                email,
-                whenDate,
-                whenTime,
-                notes
-              })
-            });
-
-            const checkout = await safeJson(checkoutResp);
-
-            if (!checkout.ok || !checkout.json) {
-              setBusy(false, 'Book & Pay');
-              showErr('Unable to create checkout session. Please try again.');
-              return;
-            }
-
-            if (!checkout.json.url) {
-              setBusy(false, 'Book & Pay');
-              showErr(checkout.json.error || 'Unable to create checkout session. Please try again.');
-              return;
-            }
-
-            window.location.href = checkout.json.url;
-
-          } catch (err) {
-            console.error(err);
-            setBusy(false, 'Book & Pay');
-            showErr('Unexpected error. Please try again.');
-          }
-        });
-      })();
-    </script>
   </body>
 </html>
