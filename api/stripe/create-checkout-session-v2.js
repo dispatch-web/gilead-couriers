@@ -2,6 +2,7 @@ const Stripe = require('stripe');
 
 module.exports = async function handler(req, res) {
   try {
+    // Only allow POST
     if (req.method !== 'POST') {
       res.setHeader('Allow', 'POST');
       return res.status(405).json({ error: 'Method Not Allowed' });
@@ -19,7 +20,7 @@ module.exports = async function handler(req, res) {
       notes = ''
     } = req.body || {};
 
-    // Basic validation
+    // ---------- Basic validation ----------
     if (!pickup || !dropoff || !miles || !email || !whenDate || !whenTime) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -29,19 +30,24 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid miles' });
     }
 
-    // ---------- Pricing (keep consistent with your rules; adjust if you want) ----------
-    // Within 20 miles: £90 fixed
-    // Beyond 20 miles: £1.80 per mile
+    // ---------- Pricing (Gilead PR-V1.0) ----------
+    // ≤ 20 miles: £90 fixed fee
+    // > 20 miles: £90 + (£1.80 per mile over 20)
+    // Rounding: nearest £5
+    // Minimum charge: never below £90
     const baseWithin20 = 90;
-    const perMile = 1.8;
+    const perMileOver20 = 1.8;
 
-    let calculated = milesNum <= 20 ? baseWithin20 : (milesNum * perMile);
+    let calculated =
+      milesNum <= 20
+        ? baseWithin20
+        : baseWithin20 + ((milesNum - 20) * perMileOver20);
 
-    // Round to nearest £5 (you can change to 10 if preferred)
+    // Round to nearest £5 (change divisor/multiplier to 10 for nearest £10)
     calculated = Math.round(calculated / 5) * 5;
 
-    // For safety, never charge less than £1 in test scenarios if you want:
-    // calculated = Math.max(calculated, 1);
+    // Enforce absolute minimum charge
+    calculated = Math.max(calculated, baseWithin20);
 
     const amountPence = Math.round(calculated * 100);
 
@@ -53,6 +59,7 @@ module.exports = async function handler(req, res) {
 
     function toISO(dateStr, timeStr) {
       // Expect dateStr "YYYY-MM-DD" and timeStr "HH:MM"
+      // NOTE: This uses UTC ("Z"). If you want UK-local scheduling, adjust accordingly.
       const dt = new Date(`${dateStr}T${timeStr}:00.000Z`);
       return Number.isFinite(dt.getTime()) ? dt.toISOString() : null;
     }
@@ -75,8 +82,8 @@ module.exports = async function handler(req, res) {
     const success_url = `${origin}/?status=success`;
     const cancel_url = `${origin}/?status=cancel`;
 
-    // ---------- Stripe Checkout Session ----------
-    // IMPORTANT: put ALL fields into BOTH session.metadata and payment_intent_data.metadata
+    // ---------- Stripe metadata ----------
+    // Put ALL fields into BOTH session.metadata and payment_intent_data.metadata
     // so your webhook can always retrieve them via session or PI.
     const metadata = {
       pickup: String(pickup),
@@ -88,9 +95,11 @@ module.exports = async function handler(req, res) {
       notes: String(notes || ''),
       scheduleStart: String(scheduleStart),
       scheduleEnd: String(scheduleEnd),
-      calculatedPrice: String(calculated)
+      calculatedPrice: String(calculated),
+      pricingRuleVersion: 'PR-V1.0'
     };
 
+    // ---------- Stripe Checkout Session ----------
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: email,
