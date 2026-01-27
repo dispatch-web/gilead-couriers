@@ -31,7 +31,21 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid miles' });
     }
 
-    // ---------- Pricing (Gilead PR-V1.0) ----------
+    // ---------- Helpers for uplift logic ----------
+    // NOTE: This treats whenDate as "YYYY-MM-DD" and whenTime as "HH:MM".
+    // We use UTC ("Z") to keep behaviour consistent with your existing scheduleStart/End logic.
+    function parseDateTimeUTC(dateStr, timeStr) {
+      const dt = new Date(`${dateStr}T${timeStr}:00.000Z`);
+      return Number.isFinite(dt.getTime()) ? dt : null;
+    }
+
+    function startOfTodayUTC() {
+      const now = new Date();
+      return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+    }
+
+    // ---------- Pricing (Gilead PR-V1.1 with uplift stacking) ----------
+    // Base pricing (PR-V1.0)
     // ≤ 20 miles: £90 fixed fee
     // > 20 miles: £90 + (£1.80 per mile over 20)
     // Rounding: nearest £5
@@ -39,16 +53,50 @@ module.exports = async function handler(req, res) {
     const baseWithin20 = 90;
     const perMileOver20 = 1.8;
 
-    let calculated =
+    let baseCalculated =
       milesNum <= 20
         ? baseWithin20
         : baseWithin20 + ((milesNum - 20) * perMileOver20);
 
-    // Round to nearest £5 (change divisor/multiplier to 10 for nearest £10)
-    calculated = Math.round(calculated / 5) * 5;
+    // Round base to nearest £5
+    baseCalculated = Math.round(baseCalculated / 5) * 5;
 
-    // Enforce absolute minimum charge
-    calculated = Math.max(calculated, baseWithin20);
+    // Enforce absolute minimum base
+    baseCalculated = Math.max(baseCalculated, baseWithin20);
+
+    // ---------- Uplifts (stacking) ----------
+    // After 17:00 → +£15
+    // Weekend (Sat/Sun) → +£20
+    // Urgent (same day or next day) → +£25
+    const UPLIFT_AFTER_1700 = 15;
+    const UPLIFT_WEEKEND = 20;
+    const UPLIFT_URGENT = 25;
+
+    const jobDT = parseDateTimeUTC(whenDate, whenTime);
+    if (!jobDT) {
+      return res.status(400).json({ error: 'Invalid whenDate/whenTime' });
+    }
+
+    const jobHourUTC = jobDT.getUTCHours();
+    const dayOfWeekUTC = jobDT.getUTCDay(); // 0=Sun, 6=Sat
+
+    const isAfter1700 = jobHourUTC >= 17;
+    const isWeekend = (dayOfWeekUTC === 0 || dayOfWeekUTC === 6);
+
+    // Urgent: same day or next day (UTC)
+    const todayUTC = startOfTodayUTC();
+    const jobDayUTC = new Date(Date.UTC(jobDT.getUTCFullYear(), jobDT.getUTCMonth(), jobDT.getUTCDate(), 0, 0, 0, 0));
+    const diffDays = Math.round((jobDayUTC.getTime() - todayUTC.getTime()) / (24 * 60 * 60 * 1000));
+    const isUrgent = diffDays <= 1;
+
+    const plusUplift =
+      (isAfter1700 ? UPLIFT_AFTER_1700 : 0) +
+      (isWeekend ? UPLIFT_WEEKEND : 0) +
+      (isUrgent ? UPLIFT_URGENT : 0);
+
+    // Final charge is base + uplift (uplift is intentionally NOT rounded in PR-V1.1)
+    // If you want uplift rounded too, tell me and I will adjust.
+    const calculated = baseCalculated + plusUplift;
 
     const amountPence = Math.round(calculated * 100);
 
@@ -60,7 +108,7 @@ module.exports = async function handler(req, res) {
 
     function toISO(dateStr, timeStr) {
       // Expect dateStr "YYYY-MM-DD" and timeStr "HH:MM"
-      // NOTE: This uses UTC ("Z"). If you want UK-local scheduling, adjust accordingly.
+      // Uses UTC ("Z") to match uplift logic and keep consistent.
       const dt = new Date(`${dateStr}T${timeStr}:00.000Z`);
       return Number.isFinite(dt.getTime()) ? dt.toISOString() : null;
     }
@@ -97,8 +145,15 @@ module.exports = async function handler(req, res) {
       notes: String(notes || ''),
       scheduleStart: String(scheduleStart),
       scheduleEnd: String(scheduleEnd),
-      calculatedPrice: String(calculated),
-      pricingRuleVersion: 'PR-V1.0'
+
+      // Pricing audit
+      pricingRuleVersion: 'PR-V1.1',
+      baseCalculated: String(baseCalculated),
+      plusUplift: String(plusUplift),
+      after1700: String(isAfter1700),
+      weekend: String(isWeekend),
+      urgent: String(isUrgent),
+      calculatedPrice: String(calculated)
     };
 
     // ---------- Stripe Checkout Session ----------
