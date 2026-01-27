@@ -11,6 +11,7 @@ module.exports = async function handler(req, res) {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
 
     const {
+      company = '',
       pickup = '',
       dropoff = '',
       miles = '',
@@ -86,6 +87,7 @@ module.exports = async function handler(req, res) {
     // Put ALL fields into BOTH session.metadata and payment_intent_data.metadata
     // so your webhook can always retrieve them via session or PI.
     const metadata = {
+      company: String(company || ''),
       pickup: String(pickup),
       dropoff: String(dropoff),
       miles: String(milesNum),
