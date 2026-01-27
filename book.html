@@ -70,6 +70,11 @@
         font-size: 15px;
       }
 
+      .btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+
       .footer {
         margin-top: 14px;
         font-size: 12px;
@@ -137,7 +142,7 @@
 
           <div class="row">
             <div>
-              <label for="miles">Estimated miles (Use Google Maps)*</label>
+              <label for="miles">Estimated miles (Use Google Maps) *</label>
               <input
                 id="miles"
                 name="miles"
@@ -201,10 +206,8 @@
     <!-- ADDED: booking submit handler -->
     <script>
       (function () {
-        // IMPORTANT: set this to the endpoint you have deployed
-        // Examples:
-        // const CHECKOUT_ENDPOINT = "/api/create-checkout-session";
-        // const CHECKOUT_ENDPOINT = "/api/create-checkout-session-v2";
+        // CONFIRMED LIVE ENDPOINT:
+        // https://www.gileadcouriers.co.uk/api/create-checkout-session-v2
         const CHECKOUT_ENDPOINT = "/api/create-checkout-session-v2";
 
         const form = document.getElementById("bookingForm");
@@ -216,6 +219,11 @@
           statusEl.className = "status" + (type ? (" " + type) : "");
         }
 
+        function getVal(id) {
+          const el = document.getElementById(id);
+          return el ? el.value : "";
+        }
+
         form.addEventListener("submit", async function (e) {
           e.preventDefault();
 
@@ -223,15 +231,29 @@
           submitBtn.disabled = true;
 
           const payload = {
-            company: document.getElementById("company").value.trim(),
-            pickup: document.getElementById("pickup").value.trim(),
-            dropoff: document.getElementById("dropoff").value.trim(),
-            miles: document.getElementById("miles").value,
-            email: document.getElementById("email").value.trim(),
-            whenDate: document.getElementById("whenDate").value,
-            whenTime: document.getElementById("whenTime").value,
-            notes: document.getElementById("notes").value.trim()
+            company: getVal("company").trim(),
+            pickup: getVal("pickup").trim(),
+            dropoff: getVal("dropoff").trim(),
+            miles: getVal("miles"),
+            email: getVal("email").trim(),
+            whenDate: getVal("whenDate"),
+            whenTime: getVal("whenTime"),
+            notes: getVal("notes").trim()
           };
+
+          // Small client-side sanity checks (server-side still authoritative)
+          if (!payload.pickup || !payload.dropoff || !payload.miles || !payload.email || !payload.whenDate || !payload.whenTime) {
+            setStatus("Please complete all required fields.", "error");
+            submitBtn.disabled = false;
+            return;
+          }
+
+          const milesNum = Number(payload.miles);
+          if (!Number.isFinite(milesNum) || milesNum <= 0) {
+            setStatus("Please enter a valid number of miles.", "error");
+            submitBtn.disabled = false;
+            return;
+          }
 
           try {
             const resp = await fetch(CHECKOUT_ENDPOINT, {
@@ -243,7 +265,7 @@
             const data = await resp.json().catch(() => ({}));
 
             if (!resp.ok) {
-              const msg = data && data.error ? data.error : "Unable to create checkout session.";
+              const msg = (data && data.error) ? data.error : "Unable to create checkout session.";
               setStatus(msg, "error");
               submitBtn.disabled = false;
               return;
