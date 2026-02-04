@@ -12,6 +12,7 @@ module.exports = async function handler(req, res) {
 
     const {
       company = '',
+      industry = '',
       pickup = '',
       dropoff = '',
       miles = '',
@@ -22,7 +23,7 @@ module.exports = async function handler(req, res) {
     } = req.body || {};
 
     // ---------- Basic validation ----------
-    if (!pickup || !dropoff || !miles || !email || !whenDate || !whenTime) {
+    if (!company || !industry || !pickup || !dropoff || !miles || !email || !whenDate || !whenTime) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -95,20 +96,15 @@ module.exports = async function handler(req, res) {
       (isUrgent ? UPLIFT_URGENT : 0);
 
     // Final charge is base + uplift (uplift is intentionally NOT rounded in PR-V1.1)
-    // If you want uplift rounded too, tell me and I will adjust.
     const calculated = baseCalculated + plusUplift;
 
     const amountPence = Math.round(calculated * 100);
 
     // ---------- Schedule window computation ----------
-    // We compute scheduleEnd from date+time, then scheduleStart from miles and buffer.
-    // This ensures the availability logic and Airtable always have Schedule Start/End.
     const AVG_MPH = 30;     // assumption
     const BUFFER_MIN = 20;  // buffer
 
     function toISO(dateStr, timeStr) {
-      // Expect dateStr "YYYY-MM-DD" and timeStr "HH:MM"
-      // Uses UTC ("Z") to match uplift logic and keep consistent.
       const dt = new Date(`${dateStr}T${timeStr}:00.000Z`);
       return Number.isFinite(dt.getTime()) ? dt.toISOString() : null;
     }
@@ -123,7 +119,6 @@ module.exports = async function handler(req, res) {
     const scheduleStart = new Date(new Date(scheduleEnd).getTime() - totalMinutes * 60 * 1000).toISOString();
 
     // ---------- URLs ----------
-    // Force absolute origin (works behind Vercel)
     const proto = (req.headers['x-forwarded-proto'] || 'https');
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const origin = `${proto}://${host}`;
@@ -132,10 +127,9 @@ module.exports = async function handler(req, res) {
     const cancel_url = `${origin}/?status=cancel`;
 
     // ---------- Stripe metadata ----------
-    // Put ALL fields into BOTH session.metadata and payment_intent_data.metadata
-    // so your webhook can always retrieve them via session or PI.
     const metadata = {
       company: String(company || ''),
+      industry: String(industry || ''),
       pickup: String(pickup),
       dropoff: String(dropoff),
       miles: String(milesNum),
