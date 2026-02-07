@@ -96,18 +96,30 @@
       }
       .status.error { color: #b00020; }
 
-      /* Minimal estimate block (TOTAL ONLY) */
+      /* Minimal premium estimate (total only) */
       .estimate {
         margin-top: 14px;
         padding: 12px;
         border-radius: 12px;
         background: rgba(11,31,59,0.06);
         border: 1px solid rgba(11,31,59,0.12);
+        display: none;
       }
-      .estimate strong { display:block; margin-bottom: 6px; }
-      .estimate .total { display:flex; justify-content:space-between; gap: 12px; font-size: 15px; font-weight: 800; }
-      .estimate .muted { color:#555; font-size: 12px; margin-top: 6px; }
-      .estimate .warn { color:#7a1c00; font-size: 12px; margin-top: 6px; }
+      .estimate .label {
+        font-size: 12px;
+        color:#555;
+        margin-bottom: 6px;
+      }
+      .estimate .value {
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: 0.2px;
+      }
+      .estimate .warn {
+        margin-top: 8px;
+        font-size: 12px;
+        color:#7a1c00;
+      }
     </style>
   </head>
 
@@ -116,7 +128,7 @@
       <div class="card">
         <h1>Book a courier job</h1>
         <p class="sub">
-          Fixed fee within 20 miles. Long-distance is priced by mileage + rules.
+          Premium fixed fee within 20 miles. Long-distance is priced by mileage + premium rules.
           Secure payment via Stripe.
         </p>
 
@@ -128,3 +140,336 @@
               <label for="company">Company / Business name *</label>
               <input
                 id="company"
+                name="company"
+                type="text"
+                required
+                placeholder="e.g. Rolls Royce plc"
+              />
+            </div>
+
+            <div>
+              <label for="industry">Industry *</label>
+              <select id="industry" name="industry" required>
+                <option value="">Select industry</option>
+                <option value="Aerospace">Aerospace</option>
+                <option value="Defence">Defence</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Legal">Legal</option>
+                <option value="Medical">Medical</option>
+                <option value="Financial Services">Financial Services</option>
+                <option value="Government / Public Sector">Government / Public Sector</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- PICKUP -->
+          <label for="pickup">Pickup address *</label>
+          <textarea
+            id="pickup"
+            name="pickup"
+            required
+            placeholder="e.g. 10 Downing Street, London SW1A 2AA"
+          ></textarea>
+
+          <!-- DROPOFF -->
+          <label for="dropoff">Drop-off address *</label>
+          <textarea
+            id="dropoff"
+            name="dropoff"
+            required
+            placeholder="e.g. 1 St Peter’s Square, Manchester M2 3AE"
+          ></textarea>
+
+          <div class="row">
+            <div>
+              <label for="miles">Estimated miles (Use Google Maps) *</label>
+              <input
+                id="miles"
+                name="miles"
+                type="number"
+                min="1"
+                step="1"
+                required
+                placeholder="e.g. 234"
+              />
+              <div class="hint">
+                Enter an approximate mileage for now (routing automation comes later).
+              </div>
+            </div>
+
+            <div>
+              <label for="email">Your email address *</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                placeholder="you@example.com"
+              />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="whenDate">When is this job needed? (date) *</label>
+              <input id="whenDate" name="whenDate" type="date" required />
+            </div>
+
+            <div>
+              <label for="whenTime">Time needed by *</label>
+              <input id="whenTime" name="whenTime" type="time" required />
+            </div>
+          </div>
+
+          <label for="notes">Notes (optional)</label>
+          <textarea
+            id="notes"
+            name="notes"
+            placeholder="Fragile items, access instructions, parking, contact name, etc."
+          ></textarea>
+
+          <!-- Total-only estimate -->
+          <div id="estimateBox" class="estimate">
+            <div class="label">Estimated premium price</div>
+            <div id="estimateValue" class="value">—</div>
+            <div id="estimateWarn" class="warn" style="display:none;"></div>
+          </div>
+
+          <button class="btn" id="submitBtn" type="submit">Book &amp; Pay</button>
+
+          <div id="status" class="status" aria-live="polite"></div>
+
+          <div class="footer">
+            By proceeding you agree to our
+            <a href="/terms.html">Terms</a>,
+            <a href="/refund-policy.html">Refund Policy</a> and
+            <a href="/privacy-policy.html">Privacy Policy</a>.
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const CHECKOUT_ENDPOINT = "/api/stripe/create-checkout-session-v2";
+
+        const form = document.getElementById("bookingForm");
+        const statusEl = document.getElementById("status");
+        const submitBtn = document.getElementById("submitBtn");
+
+        const estimateBox = document.getElementById("estimateBox");
+        const estimateValue = document.getElementById("estimateValue");
+        const estimateWarn = document.getElementById("estimateWarn");
+
+        // ---------------------------
+        // GILEAD PREMIUM PRICING RULES (TOTAL ONLY DISPLAY)
+        // ---------------------------
+        const PRICING = {
+          baseUpTo20: 120,
+          perMileOver20: 3.5,
+          uplift: [
+            { min: 80, max: 119, add: 50 },
+            { min: 120, max: 179, add: 90 }
+          ],
+          manualQuoteMiles: 180,
+          urgencyMinutes: 180, // < 3 hours
+          urgencyAdd: 40,
+          after17Add: 35,
+          weekendAdd: 60,
+          bankHolidayAdd: 90,
+          rounding: 5 // nearest £5
+        };
+
+        function setStatus(msg, type) {
+          statusEl.textContent = msg || "";
+          statusEl.className = "status" + (type ? (" " + type) : "");
+        }
+
+        function getVal(id) {
+          const el = document.getElementById(id);
+          return el ? el.value : "";
+        }
+
+        function parseMiles(v) {
+          const n = Number(String(v || "").trim());
+          if (!Number.isFinite(n)) return 0;
+          return Math.max(0, Math.round(n));
+        }
+
+        function roundToNearest(amount, nearest) {
+          const n = Number(nearest) || 1;
+          return Math.round(amount / n) * n;
+        }
+
+        function isWeekend(dateObj) {
+          const d = dateObj.getDay(); // 0 Sun, 6 Sat
+          return d === 0 || d === 6;
+        }
+
+        // Bank Holiday detection is non-trivial without an API/calendar.
+        // We do NOT auto-detect BH on the frontend estimate.
+        function isBankHolidayPlaceholder() {
+          return false;
+        }
+
+        function computeTotal(milesTotal, whenDateStr, whenTimeStr) {
+          if (!milesTotal || milesTotal < 1) {
+            return { ok: false, manual: false, total: 0, reason: "Enter estimated miles to see an estimate." };
+          }
+
+          if (milesTotal >= PRICING.manualQuoteMiles) {
+            return {
+              ok: false,
+              manual: true,
+              total: 0,
+              reason: "For 180+ miles, Gilead issues a manual premium quote."
+            };
+          }
+
+          // Base + distance
+          const over20 = Math.max(0, milesTotal - 20);
+          let total = PRICING.baseUpTo20 + (over20 * PRICING.perMileOver20);
+
+          // Distance uplift
+          for (const b of PRICING.uplift) {
+            if (milesTotal >= b.min && milesTotal <= b.max) {
+              total += b.add;
+              break;
+            }
+          }
+
+          // Time-based flags
+          let whenDt = null;
+          if (whenDateStr && whenTimeStr) {
+            const iso = `${whenDateStr}T${whenTimeStr}:00`;
+            const dt = new Date(iso);
+            if (!Number.isNaN(dt.getTime())) whenDt = dt;
+          }
+
+          let urgent = false;
+          let after17 = false;
+          let weekend = false;
+          let bankHoliday = false;
+
+          if (whenDt) {
+            after17 = whenDt.getHours() >= 17;
+            weekend = isWeekend(whenDt);
+            bankHoliday = isBankHolidayPlaceholder(); // false
+            const now = new Date();
+            const diffMinutes = (whenDt.getTime() - now.getTime()) / 60000;
+            urgent = diffMinutes >= 0 && diffMinutes < PRICING.urgencyMinutes;
+          }
+
+          if (urgent) total += PRICING.urgencyAdd;
+          if (after17) total += PRICING.after17Add;
+
+          if (bankHoliday) total += PRICING.bankHolidayAdd;
+          else if (weekend) total += PRICING.weekendAdd;
+
+          // Round
+          total = roundToNearest(total, PRICING.rounding);
+
+          return { ok: true, manual: false, total, reason: "" };
+        }
+
+        function fmtGBP(n) {
+          const v = Number(n || 0);
+          return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(v);
+        }
+
+        function renderEstimate() {
+          const milesTotal = parseMiles(getVal("miles"));
+          const whenDate = getVal("whenDate");
+          const whenTime = getVal("whenTime");
+
+          if (!milesTotal) {
+            estimateBox.style.display = "none";
+            estimateValue.textContent = "—";
+            estimateWarn.style.display = "none";
+            estimateWarn.textContent = "";
+            return;
+          }
+
+          const r = computeTotal(milesTotal, whenDate, whenTime);
+
+          estimateBox.style.display = "block";
+
+          if (!r.ok) {
+            estimateValue.textContent = r.manual ? "Manual quote" : "—";
+            estimateWarn.style.display = "block";
+            estimateWarn.textContent = r.reason || "Unable to estimate.";
+            return;
+          }
+
+          estimateValue.textContent = fmtGBP(r.total);
+          estimateWarn.style.display = "none";
+          estimateWarn.textContent = "";
+        }
+
+        ["miles", "whenDate", "whenTime"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener("input", renderEstimate);
+          if (el) el.addEventListener("change", renderEstimate);
+        });
+
+        renderEstimate();
+
+        form.addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          setStatus("Creating secure payment…", "");
+          submitBtn.disabled = true;
+
+          const payload = {
+            company: getVal("company").trim(),
+            industry: getVal("industry"),
+            pickup: getVal("pickup").trim(),
+            dropoff: getVal("dropoff").trim(),
+            miles: getVal("miles"),
+            email: getVal("email").trim(),
+            whenDate: getVal("whenDate"),
+            whenTime: getVal("whenTime"),
+            notes: getVal("notes").trim()
+          };
+
+          if (!payload.company || !payload.industry || !payload.pickup || !payload.dropoff ||
+              !payload.miles || !payload.email || !payload.whenDate || !payload.whenTime) {
+            setStatus("Please complete all required fields.", "error");
+            submitBtn.disabled = false;
+            return;
+          }
+
+          // Block 180+ miles at UI layer (manual premium quote)
+          const milesTotal = parseMiles(payload.miles);
+          if (milesTotal >= PRICING.manualQuoteMiles) {
+            setStatus("For 180+ miles, Gilead issues a manual premium quote. Please contact dispatch for a bespoke price.", "error");
+            submitBtn.disabled = false;
+            return;
+          }
+
+          try {
+            const resp = await fetch(CHECKOUT_ENDPOINT, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+
+            const data = await resp.json().catch(() => ({}));
+
+            if (!resp.ok || !data.url) {
+              setStatus("Unable to create checkout session. Please try again.", "error");
+              submitBtn.disabled = false;
+              return;
+            }
+
+            window.location.href = data.url;
+          } catch (err) {
+            setStatus("Network error. Please try again.", "error");
+            submitBtn.disabled = false;
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
