@@ -32,7 +32,7 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid miles' });
     }
 
-    // ---------- Helpers for uplift logic ----------
+    // ---------- Helpers (UTC-based, consistent with your schedule logic) ----------
     // NOTE: This treats whenDate as "YYYY-MM-DD" and whenTime as "HH:MM".
     // We use UTC ("Z") to keep behaviour consistent with your existing scheduleStart/End logic.
     function parseDateTimeUTC(dateStr, timeStr) {
@@ -45,33 +45,54 @@ module.exports = async function handler(req, res) {
       return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
     }
 
-    // ---------- Pricing (Gilead PR-V1.1 with uplift stacking) ----------
-    // Base pricing (PR-V1.0)
-    // ≤ 20 miles: £90 fixed fee
-    // > 20 miles: £90 + (£1.80 per mile over 20)
-    // Rounding: nearest £5
-    // Minimum charge: never below £90
-    const baseWithin20 = 90;
-    const perMileOver20 = 1.8;
+    function roundToNearest(amount, nearest) {
+      const n = Number(nearest) || 1;
+      return Math.round(amount / n) * n;
+    }
 
-    let baseCalculated =
-      milesNum <= 20
-        ? baseWithin20
-        : baseWithin20 + ((milesNum - 20) * perMileOver20);
+    // ---------- Premium Pricing (Gilead PR-PREMIUM-V1.0) ----------
+    // Positioning: top-of-market dedicated A-to-B courier
+    //
+    // Base:
+    //   - up to 20 miles: £120 minimum
+    // Distance:
+    //   - beyond 20 miles: £3.50 per mile (over-20 miles only)
+    // Distance uplifts:
+    //   - 80–119 miles: +£50
+    //   - 120–179 miles: +£90
+    //   - 180+ miles: manual quote (block checkout)
+    // Urgency:
+    //   - < 3 hours notice: +£40
+    // Out-of-hours:
+    //   - after 17:00: +£35
+    // Weekend / Bank Holiday:
+    //   - weekend: +£60
+    //   - bank holiday: +£90 (not auto-detected here unless you add a UK BH calendar)
+    // Rounding:
+    //   - round final to nearest £5
+    const PRICING_VERSION = 'PR-PREMIUM-V1.0';
 
-    // Round base to nearest £5
-    baseCalculated = Math.round(baseCalculated / 5) * 5;
+    const BASE_WITHIN_20 = 120;
+    const PER_MILE_OVER_20 = 3.5;
+    const MANUAL_QUOTE_MILES = 180;
 
-    // Enforce absolute minimum base
-    baseCalculated = Math.max(baseCalculated, baseWithin20);
+    const DIST_UPLIFT_80_119 = 50;
+    const DIST_UPLIFT_120_179 = 90;
 
-    // ---------- Uplifts (stacking) ----------
-    // After 17:00 → +£15
-    // Weekend (Sat/Sun) → +£20
-    // Urgent (same day or next day) → +£25
-    const UPLIFT_AFTER_1700 = 15;
-    const UPLIFT_WEEKEND = 20;
-    const UPLIFT_URGENT = 25;
+    const URGENCY_MINUTES = 180; // < 3 hours
+    const UPLIFT_URGENCY = 40;
+
+    const UPLIFT_AFTER_1700 = 35;
+    const UPLIFT_WEEKEND = 60;
+    const UPLIFT_BANK_HOLIDAY = 90;
+
+    const ROUND_NEAREST = 5;
+
+    if (milesNum >= MANUAL_QUOTE_MILES) {
+      return res.status(400).json({
+        error: 'Manual quote required for 180+ miles'
+      });
+    }
 
     const jobDT = parseDateTimeUTC(whenDate, whenTime);
     if (!jobDT) {
@@ -84,20 +105,43 @@ module.exports = async function handler(req, res) {
     const isAfter1700 = jobHourUTC >= 17;
     const isWeekend = (dayOfWeekUTC === 0 || dayOfWeekUTC === 6);
 
-    // Urgent: same day or next day (UTC)
-    const todayUTC = startOfTodayUTC();
-    const jobDayUTC = new Date(Date.UTC(jobDT.getUTCFullYear(), jobDT.getUTCMonth(), jobDT.getUTCDate(), 0, 0, 0, 0));
-    const diffDays = Math.round((jobDayUTC.getTime() - todayUTC.getTime()) / (24 * 60 * 60 * 1000));
-    const isUrgent = diffDays <= 1;
+    // Bank Holiday detection: placeholder (always false).
+    // If you later add a UK bank holiday calendar lookup, set isBankHoliday accordingly.
+    const isBankHoliday = false;
 
-    const plusUplift =
-      (isAfter1700 ? UPLIFT_AFTER_1700 : 0) +
-      (isWeekend ? UPLIFT_WEEKEND : 0) +
-      (isUrgent ? UPLIFT_URGENT : 0);
+    // Urgency: < 3 hours notice (UTC)
+    const now = new Date();
+    const diffMinutes = (jobDT.getTime() - now.getTime()) / 60000;
+    const isUrgent = diffMinutes >= 0 && diffMinutes < URGENCY_MINUTES;
 
-    // Final charge is base + uplift (uplift is intentionally NOT rounded in PR-V1.1)
-    const calculated = baseCalculated + plusUplift;
+    // Base + distance component
+    const over20 = Math.max(0, milesNum - 20);
+    const pricingBase = BASE_WITHIN_20;
+    const pricingDistance = over20 * PER_MILE_OVER_20;
 
+    // Distance uplift bracket (based on TOTAL miles)
+    let pricingDistanceUplift = 0;
+    if (milesNum >= 80 && milesNum <= 119) pricingDistanceUplift = DIST_UPLIFT_80_119;
+    else if (milesNum >= 120 && milesNum <= 179) pricingDistanceUplift = DIST_UPLIFT_120_179;
+
+    // Time-based uplifts
+    const pricingUrgency = isUrgent ? UPLIFT_URGENCY : 0;
+    const pricingAfter1700 = isAfter1700 ? UPLIFT_AFTER_1700 : 0;
+
+    // Weekend / Bank Holiday (bank holiday overrides weekend)
+    const pricingWeekend = (!isBankHoliday && isWeekend) ? UPLIFT_WEEKEND : 0;
+    const pricingBankHoliday = isBankHoliday ? UPLIFT_BANK_HOLIDAY : 0;
+
+    const totalBeforeRounding =
+      pricingBase +
+      pricingDistance +
+      pricingDistanceUplift +
+      pricingUrgency +
+      pricingAfter1700 +
+      pricingWeekend +
+      pricingBankHoliday;
+
+    const calculated = roundToNearest(totalBeforeRounding, ROUND_NEAREST);
     const amountPence = Math.round(calculated * 100);
 
     // ---------- Schedule window computation ----------
@@ -127,12 +171,13 @@ module.exports = async function handler(req, res) {
     const cancel_url = `${origin}/?status=cancel`;
 
     // ---------- Stripe metadata ----------
+    // Keep your existing metadata keys, but expand pricing audit for Make/Airtable traceability.
     const metadata = {
       company: String(company || ''),
       industry: String(industry || ''),
       pickup: String(pickup),
       dropoff: String(dropoff),
-      miles: String(milesNum),
+      miles: String(Math.round(milesNum)),
       email: String(email),
       whenDate: String(whenDate),
       whenTime: String(whenTime),
@@ -140,14 +185,24 @@ module.exports = async function handler(req, res) {
       scheduleStart: String(scheduleStart),
       scheduleEnd: String(scheduleEnd),
 
-      // Pricing audit
-      pricingRuleVersion: 'PR-V1.1',
-      baseCalculated: String(baseCalculated),
-      plusUplift: String(plusUplift),
+      // Pricing audit (premium, itemised)
+      pricingRuleVersion: PRICING_VERSION,
+      pricing_base: String(pricingBase),
+      pricing_distance: String(Math.round(pricingDistance * 100) / 100),
+      pricing_uplift_distance: String(pricingDistanceUplift),
+      pricing_urgency: String(pricingUrgency),
+      pricing_after1700: String(pricingAfter1700),
+      pricing_weekend: String(pricingWeekend),
+      pricing_bank_holiday: String(pricingBankHoliday),
+      pricing_total_before_rounding: String(Math.round(totalBeforeRounding * 100) / 100),
+      pricing_rounding_to: String(ROUND_NEAREST),
+      calculatedPrice: String(calculated),
+
+      // Flags
       after1700: String(isAfter1700),
       weekend: String(isWeekend),
-      urgent: String(isUrgent),
-      calculatedPrice: String(calculated)
+      bankHoliday: String(isBankHoliday),
+      urgent: String(isUrgent)
     };
 
     // ---------- Stripe Checkout Session ----------
@@ -164,7 +219,7 @@ module.exports = async function handler(req, res) {
             unit_amount: amountPence,
             product_data: {
               name: 'Gilead Courier Booking',
-              description: `Pickup: ${pickup} → Dropoff: ${dropoff} (${milesNum} miles)`
+              description: `Pickup: ${pickup} → Dropoff: ${dropoff} (${Math.round(milesNum)} miles)`
             }
           }
         }
@@ -178,7 +233,8 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       url: session.url,
       calculatedPrice: calculated,
-      currency: 'GBP'
+      currency: 'GBP',
+      pricingRuleVersion: PRICING_VERSION
     });
 
   } catch (err) {
