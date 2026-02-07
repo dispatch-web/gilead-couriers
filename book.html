@@ -95,6 +95,20 @@
         color: #111;
       }
       .status.error { color: #b00020; }
+
+      /* Added: premium estimate panel */
+      .estimate {
+        margin-top: 14px;
+        padding: 12px;
+        border-radius: 12px;
+        background: rgba(11,31,59,0.06);
+        border: 1px solid rgba(11,31,59,0.12);
+      }
+      .estimate strong { display:block; margin-bottom: 6px; }
+      .estimate .line { display:flex; justify-content:space-between; gap: 12px; font-size: 13px; padding: 3px 0; }
+      .estimate .total { font-weight: 800; font-size: 15px; padding-top: 8px; border-top: 1px dashed rgba(11,31,59,0.25); margin-top: 6px; }
+      .estimate .muted { color:#555; font-size: 12px; margin-top: 6px; }
+      .estimate .warn { color:#7a1c00; font-size: 12px; margin-top: 6px; }
     </style>
   </head>
 
@@ -103,7 +117,7 @@
       <div class="card">
         <h1>Book a courier job</h1>
         <p class="sub">
-          Fixed fee within 20 miles. Long-distance is priced by mileage + rules.
+          Premium fixed fee within 20 miles. Long-distance is priced by mileage + premium rules.
           Secure payment via Stripe.
         </p>
 
@@ -204,6 +218,16 @@
             placeholder="Fragile items, access instructions, parking, contact name, etc."
           ></textarea>
 
+          <!-- Added: premium estimate box -->
+          <div id="estimateBox" class="estimate" style="display:none;">
+            <strong>Estimated price (premium)</strong>
+            <div id="estimateLines"></div>
+            <div class="muted">
+              Final price is confirmed at payment and may vary slightly due to rounding and service conditions.
+            </div>
+            <div id="estimateWarn" class="warn" style="display:none;"></div>
+          </div>
+
           <button class="btn" id="submitBtn" type="submit">Book &amp; Pay</button>
 
           <div id="status" class="status" aria-live="polite"></div>
@@ -226,6 +250,39 @@
         const statusEl = document.getElementById("status");
         const submitBtn = document.getElementById("submitBtn");
 
+        const estimateBox = document.getElementById("estimateBox");
+        const estimateLines = document.getElementById("estimateLines");
+        const estimateWarn = document.getElementById("estimateWarn");
+
+        // ---------------------------
+        // GILEAD PREMIUM PRICING RULES
+        // ---------------------------
+        // Top-of-market positioning:
+        // - £120 minimum up to 20 miles
+        // - £3.50 per mile beyond 20 miles
+        // - Distance uplift brackets
+        // - Urgency (<3 hours) surcharge
+        // - Out-of-hours / weekend / bank holiday premiums
+        //
+        // NOTE: This is an on-page estimate for customer transparency.
+        // The backend should ALSO recalculate (authoritative) before creating Stripe session.
+
+        const PRICING = {
+          baseUpTo20: 120,
+          perMileOver20: 3.5,
+          uplift: [
+            { min: 80, max: 119, add: 50 },
+            { min: 120, max: 179, add: 90 }
+          ],
+          manualQuoteMiles: 180,
+          urgencyMinutes: 180, // < 3 hours
+          urgencyAdd: 40,
+          after17Add: 35,
+          weekendAdd: 60,
+          bankHolidayAdd: 90,
+          rounding: 5 // round to nearest £5 (keeps premium feel without looking arbitrary)
+        };
+
         function setStatus(msg, type) {
           statusEl.textContent = msg || "";
           statusEl.className = "status" + (type ? (" " + type) : "");
@@ -235,6 +292,225 @@
           const el = document.getElementById(id);
           return el ? el.value : "";
         }
+
+        function parseMiles(v) {
+          const n = Number(String(v || "").trim());
+          if (!Number.isFinite(n)) return 0;
+          return Math.max(0, Math.round(n));
+        }
+
+        function roundToNearest(amount, nearest) {
+          const n = Number(nearest) || 1;
+          return Math.round(amount / n) * n;
+        }
+
+        function isWeekend(dateObj) {
+          const d = dateObj.getDay(); // 0 Sun, 6 Sat
+          return d === 0 || d === 6;
+        }
+
+        // Bank Holiday detection is non-trivial without an API.
+        // For now:
+        // - we DO NOT auto-detect bank holidays in the estimate.
+        // - bank holiday premium should be applied server-side if you add a UK bank-holiday calendar later.
+        function isBankHolidayPlaceholder() {
+          return false;
+        }
+
+        function computePricing(milesTotal, whenDateStr, whenTimeStr) {
+          const result = {
+            ok: true,
+            reason: "",
+            milesTotal,
+            breakdown: {
+              base: 0,
+              distance: 0,
+              distanceUplift: 0,
+              urgency: 0,
+              outOfHours: 0,
+              weekend: 0,
+              bankHoliday: 0,
+              totalBeforeRounding: 0,
+              totalRounded: 0
+            },
+            flags: {
+              urgent: false,
+              after17: false,
+              weekend: false,
+              bankHoliday: false,
+              manualQuote: false
+            }
+          };
+
+          if (!milesTotal || milesTotal < 1) {
+            result.ok = false;
+            result.reason = "Enter estimated miles to see a premium price estimate.";
+            return result;
+          }
+
+          if (milesTotal >= PRICING.manualQuoteMiles) {
+            result.flags.manualQuote = true;
+            result.ok = false;
+            result.reason = "For 180+ miles, Gilead issues a manual premium quote (time commitment / risk / potential overnight). Submit details and we will respond quickly.";
+            return result;
+          }
+
+          // Base
+          result.breakdown.base = PRICING.baseUpTo20;
+
+          // Distance beyond 20
+          const over20 = Math.max(0, milesTotal - 20);
+          result.breakdown.distance = over20 * PRICING.perMileOver20;
+
+          // Distance uplift brackets
+          for (const b of PRICING.uplift) {
+            if (milesTotal >= b.min && milesTotal <= b.max) {
+              result.breakdown.distanceUplift += b.add;
+              break;
+            }
+          }
+
+          // Time-based flags
+          let whenDt = null;
+          if (whenDateStr && whenTimeStr) {
+            const iso = `${whenDateStr}T${whenTimeStr}:00`;
+            const dt = new Date(iso);
+            if (!Number.isNaN(dt.getTime())) whenDt = dt;
+          }
+
+          // After 17:00 premium and weekend premium
+          if (whenDt) {
+            const hours = whenDt.getHours();
+            result.flags.after17 = hours >= 17;
+            result.flags.weekend = isWeekend(whenDt);
+            result.flags.bankHoliday = isBankHolidayPlaceholder(); // currently always false
+          }
+
+          // Urgency: < 3 hours notice (if we can parse date/time)
+          if (whenDt) {
+            const now = new Date();
+            const diffMinutes = (whenDt.getTime() - now.getTime()) / 60000;
+            result.flags.urgent = diffMinutes >= 0 && diffMinutes < PRICING.urgencyMinutes;
+          }
+
+          if (result.flags.urgent) result.breakdown.urgency = PRICING.urgencyAdd;
+
+          // Out-of-hours / weekend / bank holiday premiums
+          if (result.flags.after17) result.breakdown.outOfHours += PRICING.after17Add;
+
+          // Weekend / bank holiday: bank holiday overrides weekend if both ever apply
+          if (result.flags.bankHoliday) {
+            result.breakdown.bankHoliday = PRICING.bankHolidayAdd;
+          } else if (result.flags.weekend) {
+            result.breakdown.weekend = PRICING.weekendAdd;
+          }
+
+          // Total + rounding
+          const total =
+            result.breakdown.base +
+            result.breakdown.distance +
+            result.breakdown.distanceUplift +
+            result.breakdown.urgency +
+            result.breakdown.outOfHours +
+            result.breakdown.weekend +
+            result.breakdown.bankHoliday;
+
+          result.breakdown.totalBeforeRounding = total;
+          result.breakdown.totalRounded = roundToNearest(total, PRICING.rounding);
+
+          return result;
+        }
+
+        function fmtGBP(n) {
+          const v = Number(n || 0);
+          return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(v);
+        }
+
+        function renderEstimate() {
+          const milesTotal = parseMiles(getVal("miles"));
+          const whenDate = getVal("whenDate");
+          const whenTime = getVal("whenTime");
+
+          const p = computePricing(milesTotal, whenDate, whenTime);
+
+          // No estimate yet
+          if (!milesTotal) {
+            estimateBox.style.display = "none";
+            estimateLines.innerHTML = "";
+            estimateWarn.style.display = "none";
+            estimateWarn.textContent = "";
+            return;
+          }
+
+          estimateBox.style.display = "block";
+          estimateLines.innerHTML = "";
+
+          if (!p.ok) {
+            estimateWarn.style.display = "block";
+            estimateWarn.textContent = p.reason || "Unable to estimate price.";
+            estimateLines.innerHTML = `<div class="line total"><span>Total</span><span>Manual quote</span></div>`;
+            return;
+          }
+
+          estimateWarn.style.display = "none";
+          estimateWarn.textContent = "";
+
+          const lines = [];
+          lines.push({ label: `Base (up to 20 miles)`, value: fmtGBP(p.breakdown.base) });
+
+          const over20 = Math.max(0, milesTotal - 20);
+          if (over20 > 0) {
+            lines.push({
+              label: `Distance (${over20} miles × £${PRICING.perMileOver20.toFixed(2)})`,
+              value: fmtGBP(p.breakdown.distance)
+            });
+          } else {
+            lines.push({ label: `Distance`, value: fmtGBP(0) });
+          }
+
+          if (p.breakdown.distanceUplift > 0) {
+            lines.push({ label: `Long-distance uplift`, value: fmtGBP(p.breakdown.distanceUplift) });
+          }
+
+          if (p.breakdown.urgency > 0) {
+            lines.push({ label: `Urgency (<3 hours notice)`, value: fmtGBP(p.breakdown.urgency) });
+          }
+
+          if (p.breakdown.outOfHours > 0) {
+            lines.push({ label: `Out-of-hours (after 17:00)`, value: fmtGBP(p.breakdown.outOfHours) });
+          }
+
+          if (p.breakdown.weekend > 0) {
+            lines.push({ label: `Weekend premium`, value: fmtGBP(p.breakdown.weekend) });
+          }
+
+          if (p.breakdown.bankHoliday > 0) {
+            lines.push({ label: `Bank holiday premium`, value: fmtGBP(p.breakdown.bankHoliday) });
+          }
+
+          // Render
+          for (const ln of lines) {
+            const div = document.createElement("div");
+            div.className = "line";
+            div.innerHTML = `<span>${ln.label}</span><span>${ln.value}</span>`;
+            estimateLines.appendChild(div);
+          }
+
+          const totalDiv = document.createElement("div");
+          totalDiv.className = "line total";
+          totalDiv.innerHTML = `<span>Total (rounded)</span><span>${fmtGBP(p.breakdown.totalRounded)}</span>`;
+          estimateLines.appendChild(totalDiv);
+        }
+
+        // Live estimate updates on relevant fields
+        ["miles", "whenDate", "whenTime"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener("input", renderEstimate);
+          if (el) el.addEventListener("change", renderEstimate);
+        });
+
+        // Initial render (in case browser autofills)
+        renderEstimate();
 
         form.addEventListener("submit", async function (e) {
           e.preventDefault();
@@ -257,6 +533,14 @@
           if (!payload.company || !payload.industry || !payload.pickup || !payload.dropoff ||
               !payload.miles || !payload.email || !payload.whenDate || !payload.whenTime) {
             setStatus("Please complete all required fields.", "error");
+            submitBtn.disabled = false;
+            return;
+          }
+
+          // Block 180+ miles at the UI layer (premium manual quote)
+          const milesTotal = parseMiles(payload.miles);
+          if (milesTotal >= PRICING.manualQuoteMiles) {
+            setStatus("For 180+ miles, Gilead issues a manual premium quote. Please reduce miles or contact dispatch for a bespoke price.", "error");
             submitBtn.disabled = false;
             return;
           }
