@@ -95,6 +95,19 @@
         color: #111;
       }
       .status.error { color: #b00020; }
+
+      /* Minimal estimate block (TOTAL ONLY) */
+      .estimate {
+        margin-top: 14px;
+        padding: 12px;
+        border-radius: 12px;
+        background: rgba(11,31,59,0.06);
+        border: 1px solid rgba(11,31,59,0.12);
+      }
+      .estimate strong { display:block; margin-bottom: 6px; }
+      .estimate .total { display:flex; justify-content:space-between; gap: 12px; font-size: 15px; font-weight: 800; }
+      .estimate .muted { color:#555; font-size: 12px; margin-top: 6px; }
+      .estimate .warn { color:#7a1c00; font-size: 12px; margin-top: 6px; }
     </style>
   </head>
 
@@ -103,126 +116,15 @@
       <div class="card">
         <h1>Book a courier job</h1>
         <p class="sub">
-          Dedicated A-to-B courier service. Secure payment via Stripe.
+          Fixed fee within 20 miles. Long-distance is priced by mileage + rules.
+          Secure payment via Stripe.
         </p>
 
         <form id="bookingForm">
 
+          <!-- COMPANY + INDUSTRY -->
           <div class="row">
             <div>
               <label for="company">Company / Business name *</label>
-              <input id="company" type="text" required />
-            </div>
-            <div>
-              <label for="industry">Industry *</label>
-              <select id="industry" required>
-                <option value="">Select industry</option>
-                <option>Aerospace</option>
-                <option>Defence</option>
-                <option>Engineering</option>
-                <option>Legal</option>
-                <option>Medical</option>
-                <option>Financial Services</option>
-                <option>Government / Public Sector</option>
-                <option>Other</option>
-              </select>
-            </div>
-          </div>
-
-          <label for="pickup">Pickup address *</label>
-          <textarea id="pickup" required></textarea>
-
-          <label for="dropoff">Drop-off address *</label>
-          <textarea id="dropoff" required></textarea>
-
-          <div class="row">
-            <div>
-              <label for="miles">Estimated miles *</label>
-              <input id="miles" type="number" min="1" step="1" required />
-              <div class="hint">Use Google Maps for a best estimate.</div>
-            </div>
-            <div>
-              <label for="email">Your email address *</label>
-              <input id="email" type="email" required />
-            </div>
-          </div>
-
-          <div class="row">
-            <div>
-              <label for="whenDate">Date *</label>
-              <input id="whenDate" type="date" required />
-            </div>
-            <div>
-              <label for="whenTime">Time *</label>
-              <input id="whenTime" type="time" required />
-            </div>
-          </div>
-
-          <label for="notes">Notes (optional)</label>
-          <textarea id="notes"></textarea>
-
-          <button class="btn" id="submitBtn" type="submit">
-            Book &amp; Pay
-          </button>
-
-          <div id="status" class="status"></div>
-
-          <div class="footer">
-            By proceeding you agree to our
-            <a href="/terms.html">Terms</a>,
-            <a href="/refund-policy.html">Refund Policy</a> and
-            <a href="/privacy-policy.html">Privacy Policy</a>.
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <script>
-      (function () {
-        const ENDPOINT = "/api/stripe/create-checkout-session-v2";
-        const form = document.getElementById("bookingForm");
-        const statusEl = document.getElementById("status");
-        const submitBtn = document.getElementById("submitBtn");
-
-        function val(id) {
-          return document.getElementById(id).value.trim();
-        }
-
-        form.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          submitBtn.disabled = true;
-          statusEl.textContent = "Redirecting to secure payment…";
-
-          const payload = {
-            company: val("company"),
-            industry: val("industry"),
-            pickup: val("pickup"),
-            dropoff: val("dropoff"),
-            miles: val("miles"),
-            email: val("email"),
-            whenDate: val("whenDate"),
-            whenTime: val("whenTime"),
-            notes: val("notes")
-          };
-
-          try {
-            const r = await fetch(ENDPOINT, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
-            });
-
-            const d = await r.json();
-            if (!r.ok || !d.url) throw new Error();
-
-            window.location.href = d.url;
-          } catch {
-            statusEl.textContent = "Unable to start payment. Please try again.";
-            statusEl.className = "status error";
-            submitBtn.disabled = false;
-          }
-        });
-      })();
-    </script>
-  </body>
-</html>
+              <input
+                id="company"
