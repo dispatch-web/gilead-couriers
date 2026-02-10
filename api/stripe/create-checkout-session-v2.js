@@ -50,6 +50,17 @@ module.exports = async function handler(req, res) {
       return Math.round(amount / n) * n;
     }
 
+    // --- ADDITION: Auto-generated Booking Reference (GC-YYYYMMDD-XXXX) ---
+    function makeBookingRef() {
+      const now = new Date();
+      const y = now.getUTCFullYear();
+      const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+      const d = String(now.getUTCDate()).padStart(2, "0");
+      const rand = String(Math.floor(1000 + Math.random() * 9000));
+      return `GC-${y}${m}${d}-${rand}`;
+    }
+    // --- END ADDITION ---
+
     // ---------- Premium Pricing (Gilead PR-PREMIUM-V1.0) ----------
     // Positioning: top-of-market dedicated A-to-B courier
     //
@@ -170,6 +181,10 @@ module.exports = async function handler(req, res) {
     const success_url = `${origin}/?status=success`;
     const cancel_url = `${origin}/?status=cancel`;
 
+    // --- ADDITION: Generate Booking Reference (created once per checkout session) ---
+    const bookingRef = makeBookingRef();
+    // --- END ADDITION ---
+
     // ---------- Stripe metadata ----------
     // Keep your existing metadata keys, but expand pricing audit for Make/Airtable traceability.
     const metadata = {
@@ -184,6 +199,10 @@ module.exports = async function handler(req, res) {
       notes: String(notes || ''),
       scheduleStart: String(scheduleStart),
       scheduleEnd: String(scheduleEnd),
+
+      // --- ADDITION: Booking Reference ---
+      bookingRef: String(bookingRef),
+      // --- END ADDITION ---
 
       // Pricing audit (premium, itemised)
       pricingRuleVersion: PRICING_VERSION,
@@ -234,7 +253,10 @@ module.exports = async function handler(req, res) {
       url: session.url,
       calculatedPrice: calculated,
       currency: 'GBP',
-      pricingRuleVersion: PRICING_VERSION
+      pricingRuleVersion: PRICING_VERSION,
+      // --- ADDITION: Return Booking Reference for optional UI confirmation ---
+      bookingRef: bookingRef
+      // --- END ADDITION ---
     });
 
   } catch (err) {
