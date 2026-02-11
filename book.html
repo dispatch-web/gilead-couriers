@@ -415,6 +415,22 @@
 
         renderEstimate();
 
+        // ADDED: show stored booking reference on success redirect
+        try {
+          const params = new URLSearchParams(window.location.search || "");
+          const qsStatus = params.get("status");
+          if (qsStatus === "success") {
+            const ref = localStorage.getItem("gc_bookingRef");
+            if (ref) {
+              setStatus("Payment received — Booking reference: " + ref, "");
+              localStorage.removeItem("gc_bookingRef");
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+        // END ADDED
+
         form.addEventListener("submit", async function (e) {
           e.preventDefault();
 
@@ -462,6 +478,16 @@
               submitBtn.disabled = false;
               return;
             }
+
+            // ADDED: store booking reference (if provided) so we can show it after Stripe returns
+            try {
+              if (data.bookingRef) {
+                localStorage.setItem("gc_bookingRef", String(data.bookingRef));
+              }
+            } catch (e) {
+              // ignore
+            }
+            // END ADDED
 
             window.location.href = data.url;
           } catch (err) {
