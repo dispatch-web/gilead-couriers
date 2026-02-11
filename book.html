@@ -210,6 +210,16 @@
             </div>
           </div>
 
+          <!-- ADDED: PO Number (optional) -->
+          <label for="poNumber">Purchase Order Number (optional)</label>
+          <input
+            id="poNumber"
+            name="poNumber"
+            type="text"
+            placeholder="e.g. PO-123456"
+          />
+          <!-- END ADDED -->
+
           <div class="row">
             <div>
               <label for="whenDate">When is this job needed? (date) *</label>
@@ -444,6 +454,9 @@
             dropoff: getVal("dropoff").trim(),
             miles: getVal("miles"),
             email: getVal("email").trim(),
+            // ADDED: PO Number (optional)
+            poNumber: getVal("poNumber").trim(),
+            // END ADDED
             whenDate: getVal("whenDate"),
             whenTime: getVal("whenTime"),
             notes: getVal("notes").trim()
