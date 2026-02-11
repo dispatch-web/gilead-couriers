@@ -19,7 +19,10 @@ module.exports = async function handler(req, res) {
       email = '',
       whenDate = '',
       whenTime = '',
-      notes = ''
+      notes = '',
+      // --- ADDITION: PO Number (optional) ---
+      poNumber = ''
+      // --- END ADDITION ---
     } = req.body || {};
 
     // ---------- Basic validation ----------
@@ -199,6 +202,10 @@ module.exports = async function handler(req, res) {
       notes: String(notes || ''),
       scheduleStart: String(scheduleStart),
       scheduleEnd: String(scheduleEnd),
+
+      // --- ADDITION: PO Number (optional) ---
+      poNumber: String(poNumber || ''),
+      // --- END ADDITION ---
 
       // --- ADDITION: Booking Reference ---
       bookingRef: String(bookingRef),
