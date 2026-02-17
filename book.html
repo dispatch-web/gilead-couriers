@@ -192,10 +192,16 @@
                 step="1"
                 required
                 placeholder="e.g. 234"
+                readonly
               />
-              <div class="hint">
-                Enter an approximate mileage for now (routing automation comes later).
+              <!-- ADDED: calculate miles button + hint -->
+              <button type="button" class="btn" id="calcMilesBtn" style="margin-top:10px;">
+                Calculate miles automatically
+              </button>
+              <div class="hint" id="milesHint">
+                We’ll calculate miles from the pickup &amp; drop-off postcodes.
               </div>
+              <!-- END ADDED -->
             </div>
 
             <div>
@@ -322,6 +328,74 @@
         function isBankHolidayPlaceholder() {
           return false;
         }
+
+        // ---------------------------
+        // ADDED: Auto-calculate miles from pickup/dropoff postcodes (no Google, no API key)
+        // Uses server endpoint: /api/calc-miles?from=SW1A%201AA&to=M2%203AE
+        // ---------------------------
+        function extractPostcode(text) {
+          const t = String(text || "").toUpperCase();
+          const m = t.match(/\b([A-Z]{1,2}\d{1,2}[A-Z]?)\s*?(\d[A-Z]{2})\b/);
+          return m ? (m[1] + " " + m[2]).replace(/\s+/g, " ").trim() : "";
+        }
+
+        async function calculateMilesFromPostcodes() {
+          const pickupText = getVal("pickup");
+          const dropoffText = getVal("dropoff");
+
+          const from = extractPostcode(pickupText);
+          const to = extractPostcode(dropoffText);
+
+          const milesEl = document.getElementById("miles");
+
+          if (!from || !to) {
+            setStatus("Enter valid UK postcodes in Pickup and Drop-off, then click 'Calculate miles automatically'.", "error");
+            if (milesEl) milesEl.readOnly = false;
+            return;
+          }
+
+          setStatus("Calculating miles…", "");
+          submitBtn.disabled = true;
+
+          try {
+            const resp = await fetch(`/api/calc-miles?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+            const data = await resp.json().catch(() => ({}));
+
+            if (!resp.ok || !data || !data.miles) {
+              throw new Error(data.error || "Miles calculation failed");
+            }
+
+            if (milesEl) {
+              milesEl.value = String(data.miles);
+              milesEl.readOnly = true;
+            }
+
+            setStatus(`Miles calculated: ${data.miles} miles`, "");
+            renderEstimate();
+          } catch (e) {
+            setStatus("Could not calculate miles automatically. Please enter miles manually.", "error");
+            if (milesEl) milesEl.readOnly = false;
+          } finally {
+            submitBtn.disabled = false;
+          }
+        }
+
+        const calcBtn = document.getElementById("calcMilesBtn");
+        if (calcBtn) calcBtn.addEventListener("click", calculateMilesFromPostcodes);
+
+        // Optional: try auto-calc on leaving pickup/dropoff if miles is empty
+        ["pickup", "dropoff"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener("blur", () => {
+            const milesEl = document.getElementById("miles");
+            if (milesEl && !String(milesEl.value || "").trim()) {
+              calculateMilesFromPostcodes();
+            }
+          });
+        });
+        // ---------------------------
+        // END ADDED
+        // ---------------------------
 
         function computeTotal(milesTotal, whenDateStr, whenTimeStr) {
           if (!milesTotal || milesTotal < 1) {
