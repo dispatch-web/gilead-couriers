@@ -180,10 +180,15 @@
             required
             placeholder="e.g. 1 St Peter’s Square, Manchester M2 3AE"
           ></textarea>
-
+      
           <div class="row">
             <div>
-              <label for="miles">Estimated miles (Use Google Maps) *</label>
+              <!-- UPDATED: button replaces the label -->
+    <button type="button" class="btn" id="calcMilesBtn">
+      Calculate miles automatically *
+    </button>
+    <!-- END UPDATED -->
+              
               <input
                 id="miles"
                 name="miles"
@@ -193,11 +198,9 @@
                 required
                 placeholder="e.g. 234"
                 readonly
+                style="margin-top:10px;"
               />
-              <!-- ADDED: calculate miles button + hint -->
-              <button type="button" class="btn" id="calcMilesBtn" style="margin-top:10px;">
-                Calculate miles automatically
-              </button>
+              
               <div class="hint" id="milesHint">
                 We’ll calculate miles from the pickup &amp; drop-off postcodes.
               </div>
