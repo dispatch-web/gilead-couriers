@@ -80,7 +80,6 @@
       .status { margin-top: 10px; font-size: 13px; color: #111; }
       .status.error { color: #b00020; }
 
-      /* Minimal premium estimate (total only) */
       .estimate {
         margin-top: 14px;
         padding: 12px;
@@ -89,32 +88,9 @@
         border: 1px solid rgba(11,31,59,0.12);
         display: none;
       }
-      .estimate .label {
-        font-size: 12px;
-        color:#555;
-        margin-bottom: 6px;
-      }
-      .estimate .value {
-        font-size: 18px;
-        font-weight: 900;
-        letter-spacing: 0.2px;
-      }
-      .estimate .warn {
-        margin-top: 8px;
-        font-size: 12px;
-        color:#7a1c00;
-      }
-      /* Pricing summary line (new) */
-      .estimate .summary {
-        margin-top: 8px;
-        font-size: 12px;
-        color:#444;
-        line-height: 1.35;
-      }
-      .estimate .summary code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: 12px;
-      }
+      .estimate .label { font-size: 12px; color:#555; margin-bottom: 6px; }
+      .estimate .value { font-size: 18px; font-weight: 900; letter-spacing: 0.2px; }
+      .estimate .warn { margin-top: 8px; font-size: 12px; color:#7a1c00; }
     </style>
   </head>
 
@@ -252,11 +228,7 @@
           <div id="estimateBox" class="estimate">
             <div class="label">Estimated premium price</div>
             <div id="estimateValue" class="value">—</div>
-
             <div id="estimateWarn" class="warn" style="display:none;"></div>
-
-            <!-- NEW: pricing summary -->
-            <div id="estimateSummary" class="summary" style="display:none;"></div>
           </div>
 
           <button class="btn" id="submitBtn" type="submit">Book &amp; Pay</button>
@@ -284,7 +256,6 @@
         const estimateBox = document.getElementById("estimateBox");
         const estimateValue = document.getElementById("estimateValue");
         const estimateWarn = document.getElementById("estimateWarn");
-        const estimateSummary = document.getElementById("estimateSummary");
 
         // ---------------------------
         // BASE PRICING (DEFAULT / OTHER) — PREMIUM RETAIL LOGIC
@@ -330,13 +301,18 @@
             },
             return_same_day: {
               baseUpTo20: 120,
-              // Recalibrated non-linear:
-              // 156 one-way (312 effective) -> ~£500
-              // 190 one-way (380 effective) -> ~£650
+
+              // Recalibrated, non-linear:
+              // Effective miles = 2× one-way miles.
+              // 156 one-way => 312 effective => £500 (rounded to £10)
+              // 190 one-way => 380 effective => £650 (rounded to £10)
               perMileOver20: 1.30,
+
+              // Distance uplift only for longer return shuttles (effective miles ≥ 340)
               uplift: [
-                { min: 340, max: 520, add: 60 } // effective-miles uplift
+                { min: 340, max: 520, add: 60 }
               ],
+
               manualQuoteMiles: 520, // effective miles
               urgencyMinutes: 180,
               urgencyAdd: 25,
@@ -584,8 +560,6 @@
           return d === 0 || d === 6;
         }
 
-        // Bank Holiday detection is non-trivial without an API/calendar.
-        // We do NOT auto-detect BH on the frontend estimate.
         function isBankHolidayPlaceholder() {
           return false;
         }
@@ -602,10 +576,6 @@
           return merged;
         }
 
-        // ---------------------------
-        // Auto-calculate miles from pickup/dropoff postcodes (no Google, no API key)
-        // Uses server endpoint: /api/calc-miles?from=SW1A%201AA&to=M2%203AE
-        // ---------------------------
         function extractPostcode(text) {
           const t = String(text || "").toUpperCase();
           const m = t.match(/\b([A-Z]{1,2}\d{1,2}[A-Z]?)\s*?(\d[A-Z]{2})\b/);
@@ -666,17 +636,6 @@
           });
         });
 
-        function fmtGBP(n) {
-          const v = Number(n || 0);
-          return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(v);
-        }
-
-        function fmtGBPCompact(n) {
-          const v = Number(n || 0);
-          const rounded = Math.round(v);
-          return "£" + rounded.toString();
-        }
-
         function computeTotal(oneWayMiles, whenDateStr, whenTimeStr, industry, serviceType) {
           const P = getPricingProfile(industry, serviceType);
 
@@ -696,24 +655,16 @@
             };
           }
 
-          // Base + distance
           const over20 = Math.max(0, effectiveMiles - 20);
-          const distanceCost = over20 * P.perMileOver20;
-          let total = P.baseUpTo20 + distanceCost;
+          let total = P.baseUpTo20 + (over20 * P.perMileOver20);
 
-          // Uplift (distance band)
-          let upliftApplied = 0;
-          let upliftBand = null;
           for (const b of (P.uplift || [])) {
             if (effectiveMiles >= b.min && effectiveMiles <= b.max) {
-              upliftApplied = Number(b.add || 0);
-              upliftBand = { min: b.min, max: b.max, add: b.add };
-              total += upliftApplied;
+              total += b.add;
               break;
             }
           }
 
-          // Time-based flags
           let whenDt = null;
           if (whenDateStr && whenTimeStr) {
             const iso = `${whenDateStr}T${whenTimeStr}:00`;
@@ -729,80 +680,27 @@
           if (whenDt) {
             after17 = whenDt.getHours() >= 17;
             weekend = isWeekend(whenDt);
-            bankHoliday = isBankHolidayPlaceholder(); // false
-
+            bankHoliday = isBankHolidayPlaceholder();
             const now = new Date();
             const diffMinutes = (whenDt.getTime() - now.getTime()) / 60000;
             urgent = diffMinutes >= 0 && diffMinutes < P.urgencyMinutes;
           }
 
-          const adds = [];
-          if (urgent) { total += P.urgencyAdd; adds.push({ k: "Urgent", v: P.urgencyAdd }); }
-          if (after17) { total += P.after17Add; adds.push({ k: "After 17:00", v: P.after17Add }); }
+          if (urgent) total += P.urgencyAdd;
+          if (after17) total += P.after17Add;
 
-          if (bankHoliday) {
-            total += P.bankHolidayAdd;
-            adds.push({ k: "Bank holiday", v: P.bankHolidayAdd });
-          } else if (weekend) {
-            total += P.weekendAdd;
-            adds.push({ k: "Weekend", v: P.weekendAdd });
-          }
+          if (bankHoliday) total += P.bankHolidayAdd;
+          else if (weekend) total += P.weekendAdd;
 
-          const beforeRounding = total;
           total = roundToNearest(total, P.rounding);
 
-          return {
-            ok: true,
-            manual: false,
-            total,
-            reason: "",
-            breakdown: {
-              industry: industry || "",
-              serviceType: serviceType || "oneway",
-              oneWayMiles,
-              effectiveMiles,
-              base: P.baseUpTo20,
-              perMile: P.perMileOver20,
-              over20Miles: over20,
-              distanceCost,
-              upliftApplied,
-              upliftBand,
-              adds,
-              rounding: P.rounding,
-              beforeRounding
-            }
-          };
+          const note = isReturn ? "Return same day pricing applied (round trip)." : "";
+          return { ok: true, manual: false, total, reason: "", metaNote: note };
         }
 
-        function buildPricingSummary(b) {
-          if (!b) return "";
-
-          const parts = [];
-          const stLabel = b.serviceType === "return_same_day" ? "Return same day" : "One-way";
-          parts.push(`<code>${stLabel}</code> · <code>${b.oneWayMiles} mi</code> one-way`);
-
-          if (b.serviceType === "return_same_day") {
-            parts.push(`priced as <code>${b.effectiveMiles} mi</code> (round trip)`);
-          } else {
-            parts.push(`priced as <code>${b.effectiveMiles} mi</code>`);
-          }
-
-          const line2 = [];
-          line2.push(`Base ${fmtGBPCompact(b.base)}`);
-          line2.push(`+ Distance ${fmtGBPCompact(b.distanceCost)} (${b.over20Miles} mi × £${b.perMile.toFixed(2)})`);
-
-          if (b.upliftApplied) {
-            line2.push(`+ Uplift ${fmtGBPCompact(b.upliftApplied)}`);
-          }
-
-          if (b.adds && b.adds.length) {
-            const flags = b.adds.map(x => `${x.k} ${fmtGBPCompact(x.v)}`).join(", ");
-            line2.push(`+ ${flags}`);
-          }
-
-          line2.push(`→ Rounded to nearest £${b.rounding}`);
-
-          return `${parts.join(" ")}<br/>${line2.join(" ")}`;
+        function fmtGBP(n) {
+          const v = Number(n || 0);
+          return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(v);
         }
 
         function renderEstimate() {
@@ -817,10 +715,6 @@
             estimateValue.textContent = "—";
             estimateWarn.style.display = "none";
             estimateWarn.textContent = "";
-            if (estimateSummary) {
-              estimateSummary.style.display = "none";
-              estimateSummary.innerHTML = "";
-            }
             return;
           }
 
@@ -832,24 +726,17 @@
             estimateValue.textContent = r.manual ? "Manual quote" : "—";
             estimateWarn.style.display = "block";
             estimateWarn.textContent = r.reason || "Unable to estimate.";
-
-            if (estimateSummary) {
-              estimateSummary.style.display = "none";
-              estimateSummary.innerHTML = "";
-            }
             return;
           }
 
           estimateValue.textContent = fmtGBP(r.total);
 
-          // Keep warn line for any high-level note (optional)
-          estimateWarn.style.display = "none";
-          estimateWarn.textContent = "";
-
-          // NEW: pricing summary
-          if (estimateSummary) {
-            estimateSummary.style.display = "block";
-            estimateSummary.innerHTML = buildPricingSummary(r.breakdown);
+          if (r.metaNote) {
+            estimateWarn.style.display = "block";
+            estimateWarn.textContent = r.metaNote;
+          } else {
+            estimateWarn.style.display = "none";
+            estimateWarn.textContent = "";
           }
         }
 
@@ -861,7 +748,6 @@
 
         renderEstimate();
 
-        // Show stored booking reference on success redirect
         try {
           const params = new URLSearchParams(window.location.search || "");
           const qsStatus = params.get("status");
@@ -872,9 +758,7 @@
               localStorage.removeItem("gc_bookingRef");
             }
           }
-        } catch (e) {
-          // ignore
-        }
+        } catch (e) { /* ignore */ }
 
         form.addEventListener("submit", async function (e) {
           e.preventDefault();
@@ -907,7 +791,6 @@
           const P = getPricingProfile(payload.industry, payload.serviceType);
           const effectiveMiles = (payload.serviceType === "return_same_day") ? (oneWayMiles * 2) : oneWayMiles;
 
-          // Block manual quote threshold at UI layer
           if (effectiveMiles >= P.manualQuoteMiles) {
             setStatus(`For ${P.manualQuoteMiles}+ miles, Gilead issues a manual premium quote. Please contact dispatch for a bespoke price.`, "error");
             submitBtn.disabled = false;
@@ -929,14 +812,11 @@
               return;
             }
 
-            // Store booking reference (if provided) so we can show it after Stripe returns
             try {
               if (data.bookingRef) {
                 localStorage.setItem("gc_bookingRef", String(data.bookingRef));
               }
-            } catch (e) {
-              // ignore
-            }
+            } catch (e) { /* ignore */ }
 
             window.location.href = data.url;
           } catch (err) {
