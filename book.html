@@ -280,12 +280,6 @@
 
         // ---------------------------
         // INDUSTRY PRICING PROFILES (CONSISTENT RETURN-SAME-DAY BEHAVIOUR)
-        //
-        // Design intent:
-        // - Aerospace (Return same day): preferred supplier shuttle; Aeromet↔Cardiff ≈ £650
-        // - Defence/Engineering/Gov: structured corridor; lower than premium sectors
-        // - Legal/Medical/FinServ: premium regulated; higher return pricing
-        // - Other: sensible mid-tier return pricing (avoid accidental £1k+ returns)
         // ---------------------------
         const INDUSTRY_PRICING = {
           "Aerospace": {
@@ -307,10 +301,18 @@
             },
             return_same_day: {
               baseUpTo20: 120,
-              // Calibrated: one-way ≈190 => effective ≈380:
-              // 120 + (360 * 1.47) = 649.2 -> rounds to 650
-              perMileOver20: 1.47,
-              uplift: [{ min: 0, max: 9999, add: 0 }],
+
+              // Recalibrated, non-linear:
+              // Effective miles = 2× one-way miles.
+              // 156 one-way => 312 effective => £500 (rounded to £10)
+              // 190 one-way => 380 effective => £650 (rounded to £10)
+              perMileOver20: 1.30,
+
+              // Distance uplift only for longer return shuttles (effective miles ≥ 340)
+              uplift: [
+                { min: 340, max: 520, add: 60 }
+              ],
+
               manualQuoteMiles: 520, // effective miles
               urgencyMinutes: 180,
               urgencyAdd: 25,
@@ -341,7 +343,6 @@
               baseUpTo20: 120,
               perMileOver20: 1.85,
               uplift: [
-                // modest shuttle premium for longer dedicated blocks
                 { min: 260, max: 520, add: 40 }
               ],
               manualQuoteMiles: 480,
@@ -436,7 +437,6 @@
             },
             return_same_day: {
               baseUpTo20: 120,
-              // premium return lane (discretion + time critical)
               perMileOver20: 2.85,
               uplift: [
                 { min: 240, max: 480, add: 80 }
@@ -516,7 +516,7 @@
           },
 
           "Other": {
-            oneway: null, // fallback to PRICING
+            oneway: null,
             return_same_day: {
               baseUpTo20: 120,
               perMileOver20: 2.35,
@@ -576,9 +576,6 @@
           return merged;
         }
 
-        // ---------------------------
-        // Auto-calculate miles from pickup/dropoff postcodes
-        // ---------------------------
         function extractPostcode(text) {
           const t = String(text || "").toUpperCase();
           const m = t.match(/\b([A-Z]{1,2}\d{1,2}[A-Z]?)\s*?(\d[A-Z]{2})\b/);
@@ -751,7 +748,6 @@
 
         renderEstimate();
 
-        // Show stored booking reference on success redirect
         try {
           const params = new URLSearchParams(window.location.search || "");
           const qsStatus = params.get("status");
