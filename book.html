@@ -180,15 +180,15 @@
             required
             placeholder="e.g. 1 St Peter’s Square, Manchester M2 3AE"
           ></textarea>
-      
+
           <div class="row">
             <div>
               <!-- UPDATED: button replaces the label -->
-          <button type="button" class="btn" id="calcMilesBtn">
-               Miles calculated automatically *
-            </button>
-          <!-- END UPDATED -->
-              
+              <button type="button" class="btn" id="calcMilesBtn">
+                Miles calculated automatically *
+              </button>
+              <!-- END UPDATED -->
+
               <input
                 id="miles"
                 name="miles"
@@ -200,7 +200,7 @@
                 readonly
                 style="margin-top:10px;"
               />
-              
+
               <div class="hint" id="milesHint">
                 We’ll calculate miles from the pickup &amp; drop-off postcodes.
               </div>
@@ -282,7 +282,8 @@
         const estimateWarn = document.getElementById("estimateWarn");
 
         // ---------------------------
-        // GILEAD PREMIUM PRICING RULES (TOTAL ONLY DISPLAY)
+        // BASE PRICING (DEFAULT / OTHER) — PREMIUM RETAIL LOGIC
+        // NOTE: Industry-specific profiles override this where needed.
         // ---------------------------
         const PRICING = {
           baseUpTo20: 120,
@@ -292,13 +293,151 @@
             { min: 120, max: 179, add: 90 }
           ],
           manualQuoteMiles: 180,
+
           urgencyMinutes: 180, // < 3 hours
           urgencyAdd: 40,
           after17Add: 35,
           weekendAdd: 60,
           bankHolidayAdd: 90,
+
           rounding: 5 // nearest £5
         };
+
+        // ---------------------------
+        // INDUSTRY PRICING PROFILES
+        // Purpose: same fields; maths changes by industry selection.
+        // Strategy:
+        // - Aerospace/Defence/Engineering/Gov: corridor-style (preferred supplier / structured lanes)
+        // - Legal/Medical/FinServ: keep premium urgency bias
+        // - Other: default PRICING
+        // ---------------------------
+        const INDUSTRY_PRICING = {
+          "Aerospace": {
+            baseUpTo20: 120,
+            perMileOver20: 2.25,
+            uplift: [
+              { min: 80, max: 119, add: 35 },
+              { min: 120, max: 179, add: 60 }
+            ],
+            manualQuoteMiles: 260,
+            urgencyMinutes: 180,
+            urgencyAdd: 25,
+            after17Add: 25,
+            weekendAdd: 50,
+            bankHolidayAdd: 80,
+            rounding: 10
+          },
+
+          "Defence": {
+            baseUpTo20: 120,
+            perMileOver20: 2.35,
+            uplift: [
+              { min: 80, max: 119, add: 40 },
+              { min: 120, max: 179, add: 70 }
+            ],
+            manualQuoteMiles: 240,
+            urgencyMinutes: 180,
+            urgencyAdd: 30,
+            after17Add: 30,
+            weekendAdd: 55,
+            bankHolidayAdd: 85,
+            rounding: 10
+          },
+
+          "Engineering": {
+            baseUpTo20: 120,
+            perMileOver20: 2.50,
+            uplift: [
+              { min: 80, max: 119, add: 45 },
+              { min: 120, max: 179, add: 80 }
+            ],
+            manualQuoteMiles: 220,
+            urgencyMinutes: 180,
+            urgencyAdd: 30,
+            after17Add: 30,
+            weekendAdd: 55,
+            bankHolidayAdd: 85,
+            rounding: 10
+          },
+
+          "Government / Public Sector": {
+            baseUpTo20: 120,
+            perMileOver20: 2.40,
+            uplift: [
+              { min: 80, max: 119, add: 40 },
+              { min: 120, max: 179, add: 70 }
+            ],
+            manualQuoteMiles: 220,
+            urgencyMinutes: 180,
+            urgencyAdd: 25,
+            after17Add: 25,
+            weekendAdd: 50,
+            bankHolidayAdd: 80,
+            rounding: 10
+          },
+
+          // Keep these as premium/urgent leaning
+          "Legal": {
+            baseUpTo20: 120,
+            perMileOver20: 3.5,
+            uplift: [
+              { min: 80, max: 119, add: 50 },
+              { min: 120, max: 179, add: 90 }
+            ],
+            manualQuoteMiles: 180,
+            urgencyMinutes: 180,
+            urgencyAdd: 45,
+            after17Add: 40,
+            weekendAdd: 70,
+            bankHolidayAdd: 95,
+            rounding: 5
+          },
+
+          "Medical": {
+            baseUpTo20: 120,
+            perMileOver20: 3.10,
+            uplift: [
+              { min: 80, max: 119, add: 45 },
+              { min: 120, max: 179, add: 85 }
+            ],
+            manualQuoteMiles: 200,
+            urgencyMinutes: 180,
+            urgencyAdd: 40,
+            after17Add: 35,
+            weekendAdd: 70,
+            bankHolidayAdd: 100,
+            rounding: 5
+          },
+
+          "Financial Services": {
+            baseUpTo20: 120,
+            perMileOver20: 3.25,
+            uplift: [
+              { min: 80, max: 119, add: 50 },
+              { min: 120, max: 179, add: 90 }
+            ],
+            manualQuoteMiles: 200,
+            urgencyMinutes: 180,
+            urgencyAdd: 40,
+            after17Add: 40,
+            weekendAdd: 65,
+            bankHolidayAdd: 95,
+            rounding: 5
+          },
+
+          "Other": {
+            // Use PRICING defaults by falling back (no overrides needed).
+          }
+        };
+
+        function getPricingForIndustry(industry) {
+          const key = String(industry || "").trim();
+          const override = INDUSTRY_PRICING[key] || {};
+          const merged = { ...PRICING, ...override };
+          // Replace uplift array completely if overridden
+          if (override.uplift) merged.uplift = override.uplift;
+          return merged;
+        }
 
         function setStatus(msg, type) {
           statusEl.textContent = msg || "";
@@ -333,7 +472,7 @@
         }
 
         // ---------------------------
-        // ADDED: Auto-calculate miles from pickup/dropoff postcodes (no Google, no API key)
+        // Auto-calculate miles from pickup/dropoff postcodes (no Google, no API key)
         // Uses server endpoint: /api/calc-miles?from=SW1A%201AA&to=M2%203AE
         // ---------------------------
         function extractPostcode(text) {
@@ -396,30 +535,29 @@
             }
           });
         });
-        // ---------------------------
-        // END ADDED
-        // ---------------------------
 
-        function computeTotal(milesTotal, whenDateStr, whenTimeStr) {
+        function computeTotal(milesTotal, whenDateStr, whenTimeStr, industry) {
+          const P = getPricingForIndustry(industry);
+
           if (!milesTotal || milesTotal < 1) {
             return { ok: false, manual: false, total: 0, reason: "Enter estimated miles to see an estimate." };
           }
 
-          if (milesTotal >= PRICING.manualQuoteMiles) {
+          if (milesTotal >= P.manualQuoteMiles) {
             return {
               ok: false,
               manual: true,
               total: 0,
-              reason: "For 180+ miles, Gilead issues a manual premium quote."
+              reason: `For ${P.manualQuoteMiles}+ miles, Gilead issues a manual premium quote.`
             };
           }
 
           // Base + distance
           const over20 = Math.max(0, milesTotal - 20);
-          let total = PRICING.baseUpTo20 + (over20 * PRICING.perMileOver20);
+          let total = P.baseUpTo20 + (over20 * P.perMileOver20);
 
           // Distance uplift
-          for (const b of PRICING.uplift) {
+          for (const b of (P.uplift || [])) {
             if (milesTotal >= b.min && milesTotal <= b.max) {
               total += b.add;
               break;
@@ -445,17 +583,17 @@
             bankHoliday = isBankHolidayPlaceholder(); // false
             const now = new Date();
             const diffMinutes = (whenDt.getTime() - now.getTime()) / 60000;
-            urgent = diffMinutes >= 0 && diffMinutes < PRICING.urgencyMinutes;
+            urgent = diffMinutes >= 0 && diffMinutes < P.urgencyMinutes;
           }
 
-          if (urgent) total += PRICING.urgencyAdd;
-          if (after17) total += PRICING.after17Add;
+          if (urgent) total += P.urgencyAdd;
+          if (after17) total += P.after17Add;
 
-          if (bankHoliday) total += PRICING.bankHolidayAdd;
-          else if (weekend) total += PRICING.weekendAdd;
+          if (bankHoliday) total += P.bankHolidayAdd;
+          else if (weekend) total += P.weekendAdd;
 
           // Round
-          total = roundToNearest(total, PRICING.rounding);
+          total = roundToNearest(total, P.rounding);
 
           return { ok: true, manual: false, total, reason: "" };
         }
@@ -469,6 +607,7 @@
           const milesTotal = parseMiles(getVal("miles"));
           const whenDate = getVal("whenDate");
           const whenTime = getVal("whenTime");
+          const industry = getVal("industry");
 
           if (!milesTotal) {
             estimateBox.style.display = "none";
@@ -478,7 +617,7 @@
             return;
           }
 
-          const r = computeTotal(milesTotal, whenDate, whenTime);
+          const r = computeTotal(milesTotal, whenDate, whenTime, industry);
 
           estimateBox.style.display = "block";
 
@@ -494,7 +633,7 @@
           estimateWarn.textContent = "";
         }
 
-        ["miles", "whenDate", "whenTime"].forEach((id) => {
+        ["industry", "miles", "whenDate", "whenTime"].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.addEventListener("input", renderEstimate);
           if (el) el.addEventListener("change", renderEstimate);
@@ -502,7 +641,7 @@
 
         renderEstimate();
 
-        // ADDED: show stored booking reference on success redirect
+        // Show stored booking reference on success redirect
         try {
           const params = new URLSearchParams(window.location.search || "");
           const qsStatus = params.get("status");
@@ -516,7 +655,6 @@
         } catch (e) {
           // ignore
         }
-        // END ADDED
 
         form.addEventListener("submit", async function (e) {
           e.preventDefault();
@@ -531,25 +669,26 @@
             dropoff: getVal("dropoff").trim(),
             miles: getVal("miles"),
             email: getVal("email").trim(),
-            // ADDED: PO Number (optional)
             poNumber: getVal("poNumber").trim(),
-            // END ADDED
             whenDate: getVal("whenDate"),
             whenTime: getVal("whenTime"),
             notes: getVal("notes").trim()
           };
 
-          if (!payload.company || !payload.industry || !payload.pickup || !payload.dropoff ||
-              !payload.miles || !payload.email || !payload.whenDate || !payload.whenTime) {
+          if (
+            !payload.company || !payload.industry || !payload.pickup || !payload.dropoff ||
+            !payload.miles || !payload.email || !payload.whenDate || !payload.whenTime
+          ) {
             setStatus("Please complete all required fields.", "error");
             submitBtn.disabled = false;
             return;
           }
 
-          // Block 180+ miles at UI layer (manual premium quote)
+          // Industry-aware manual quote threshold gate
           const milesTotal = parseMiles(payload.miles);
-          if (milesTotal >= PRICING.manualQuoteMiles) {
-            setStatus("For 180+ miles, Gilead issues a manual premium quote. Please contact dispatch for a bespoke price.", "error");
+          const P = getPricingForIndustry(payload.industry);
+          if (milesTotal >= P.manualQuoteMiles) {
+            setStatus(`For ${P.manualQuoteMiles}+ miles, Gilead issues a manual premium quote. Please contact dispatch for a bespoke price.`, "error");
             submitBtn.disabled = false;
             return;
           }
@@ -569,7 +708,7 @@
               return;
             }
 
-            // ADDED: store booking reference (if provided) so we can show it after Stripe returns
+            // Store booking reference (if provided) so we can show it after Stripe returns
             try {
               if (data.bookingRef) {
                 localStorage.setItem("gc_bookingRef", String(data.bookingRef));
@@ -577,7 +716,6 @@
             } catch (e) {
               // ignore
             }
-            // END ADDED
 
             window.location.href = data.url;
           } catch (err) {
