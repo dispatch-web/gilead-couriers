@@ -134,7 +134,7 @@
             </div>
           </div>
 
-          <!-- SERVICE TYPE (NEW: minimal field addition to avoid "guessing return trips") -->
+          <!-- SERVICE TYPE -->
           <label for="serviceType">Service type *</label>
           <select id="serviceType" name="serviceType" required>
             <option value="oneway">One-way (Pickup → Drop-off)</option>
@@ -197,7 +197,6 @@
             </div>
           </div>
 
-          <!-- PO Number (optional) -->
           <label for="poNumber">Purchase Order Number (optional)</label>
           <input
             id="poNumber"
@@ -280,9 +279,13 @@
         };
 
         // ---------------------------
-        // INDUSTRY PRICING PROFILES
-        // - Aerospace one-way: corridor pricing
-        // - Aerospace return same day: shuttle pricing calibrated to ~£650 for ~380 miles total
+        // INDUSTRY PRICING PROFILES (CONSISTENT RETURN-SAME-DAY BEHAVIOUR)
+        //
+        // Design intent:
+        // - Aerospace (Return same day): preferred supplier shuttle; Aeromet↔Cardiff ≈ £650
+        // - Defence/Engineering/Gov: structured corridor; lower than premium sectors
+        // - Legal/Medical/FinServ: premium regulated; higher return pricing
+        // - Other: sensible mid-tier return pricing (avoid accidental £1k+ returns)
         // ---------------------------
         const INDUSTRY_PRICING = {
           "Aerospace": {
@@ -304,13 +307,11 @@
             },
             return_same_day: {
               baseUpTo20: 120,
-              // Calibrated: if one-way ≈190, effective ≈380:
-              // total ≈ 120 + (360 * 1.47) = 649.2 -> rounds to 650
+              // Calibrated: one-way ≈190 => effective ≈380:
+              // 120 + (360 * 1.47) = 649.2 -> rounds to 650
               perMileOver20: 1.47,
-              uplift: [
-                { min: 0, max: 9999, add: 0 }
-              ],
-              manualQuoteMiles: 520, // effective miles threshold (round-trip)
+              uplift: [{ min: 0, max: 9999, add: 0 }],
+              manualQuoteMiles: 520, // effective miles
               urgencyMinutes: 180,
               urgencyAdd: 25,
               after17Add: 25,
@@ -338,8 +339,11 @@
             },
             return_same_day: {
               baseUpTo20: 120,
-              perMileOver20: 1.65,
-              uplift: [{ min: 0, max: 9999, add: 0 }],
+              perMileOver20: 1.85,
+              uplift: [
+                // modest shuttle premium for longer dedicated blocks
+                { min: 260, max: 520, add: 40 }
+              ],
               manualQuoteMiles: 480,
               urgencyMinutes: 180,
               urgencyAdd: 30,
@@ -368,8 +372,10 @@
             },
             return_same_day: {
               baseUpTo20: 120,
-              perMileOver20: 1.75,
-              uplift: [{ min: 0, max: 9999, add: 0 }],
+              perMileOver20: 1.95,
+              uplift: [
+                { min: 240, max: 480, add: 35 }
+              ],
               manualQuoteMiles: 440,
               urgencyMinutes: 180,
               urgencyAdd: 30,
@@ -398,8 +404,10 @@
             },
             return_same_day: {
               baseUpTo20: 120,
-              perMileOver20: 1.70,
-              uplift: [{ min: 0, max: 9999, add: 0 }],
+              perMileOver20: 1.85,
+              uplift: [
+                { min: 240, max: 480, add: 25 }
+              ],
               manualQuoteMiles: 440,
               urgencyMinutes: 180,
               urgencyAdd: 25,
@@ -428,14 +436,17 @@
             },
             return_same_day: {
               baseUpTo20: 120,
-              perMileOver20: 2.35,
-              uplift: [{ min: 0, max: 9999, add: 0 }],
+              // premium return lane (discretion + time critical)
+              perMileOver20: 2.85,
+              uplift: [
+                { min: 240, max: 480, add: 80 }
+              ],
               manualQuoteMiles: 360,
               urgencyMinutes: 180,
-              urgencyAdd: 45,
-              after17Add: 40,
-              weekendAdd: 70,
-              bankHolidayAdd: 95,
+              urgencyAdd: 55,
+              after17Add: 45,
+              weekendAdd: 80,
+              bankHolidayAdd: 110,
               rounding: 5
             }
           },
@@ -458,14 +469,16 @@
             },
             return_same_day: {
               baseUpTo20: 120,
-              perMileOver20: 2.15,
-              uplift: [{ min: 0, max: 9999, add: 0 }],
+              perMileOver20: 2.65,
+              uplift: [
+                { min: 240, max: 520, add: 70 }
+              ],
               manualQuoteMiles: 400,
               urgencyMinutes: 180,
-              urgencyAdd: 40,
-              after17Add: 35,
-              weekendAdd: 70,
-              bankHolidayAdd: 100,
+              urgencyAdd: 50,
+              after17Add: 40,
+              weekendAdd: 80,
+              bankHolidayAdd: 120,
               rounding: 5
             }
           },
@@ -488,21 +501,36 @@
             },
             return_same_day: {
               baseUpTo20: 120,
-              perMileOver20: 2.20,
-              uplift: [{ min: 0, max: 9999, add: 0 }],
+              perMileOver20: 2.70,
+              uplift: [
+                { min: 240, max: 520, add: 75 }
+              ],
               manualQuoteMiles: 400,
               urgencyMinutes: 180,
-              urgencyAdd: 40,
-              after17Add: 40,
-              weekendAdd: 65,
-              bankHolidayAdd: 95,
+              urgencyAdd: 50,
+              after17Add: 45,
+              weekendAdd: 75,
+              bankHolidayAdd: 110,
               rounding: 5
             }
           },
 
           "Other": {
-            oneway: null,
-            return_same_day: null
+            oneway: null, // fallback to PRICING
+            return_same_day: {
+              baseUpTo20: 120,
+              perMileOver20: 2.35,
+              uplift: [
+                { min: 240, max: 480, add: 50 }
+              ],
+              manualQuoteMiles: 360,
+              urgencyMinutes: 180,
+              urgencyAdd: 40,
+              after17Add: 35,
+              weekendAdd: 65,
+              bankHolidayAdd: 95,
+              rounding: 5
+            }
           }
         };
 
