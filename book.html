@@ -285,12 +285,21 @@
           "Aerospace": {
             oneway: {
               baseUpTo20: 120,
-              perMileOver20: 2.5,
+
+              /* UPDATED: lower per-mile for a sensible Aeromet one-way anchor */
+              perMileOver20: 2.25,
+
+              /* UPDATED: shift uplift so 190 miles does NOT hit the old 180–259 premium band
+                 - Extend the mid band up to 210 miles
+                 - Move the high band to start at 211 miles
+                 - Tune mid-band add so 190 miles anchors to ~£520 (rounded to £10)
+              */
               uplift: [
                 { min: 80,  max: 119, add: 35 },
-                { min: 120, max: 179, add: 60 },
-                { min: 180, max: 259, add: 105 }
+                { min: 120, max: 210, add: 20 },
+                { min: 211, max: 259, add: 105 }
               ],
+
               manualQuoteMiles: 260,
               urgencyMinutes: 180,
               urgencyAdd: 25,
