@@ -85,7 +85,7 @@ module.exports = async function handler(req, res) {
 
     const BASE_WITHIN_20 = 120;
     const PER_MILE_OVER_20 = 3.5;
-    const MANUAL_QUOTE_MILES = 180;
+    const MANUAL_QUOTE_MILES = 500;
 
     const DIST_UPLIFT_80_119 = 50;
     const DIST_UPLIFT_120_179 = 90;
@@ -101,7 +101,7 @@ module.exports = async function handler(req, res) {
 
     if (milesNum >= MANUAL_QUOTE_MILES) {
       return res.status(400).json({
-        error: 'Manual quote required for 180+ miles'
+        error: 'Manual quote required for 500+ miles'
       });
     }
 
