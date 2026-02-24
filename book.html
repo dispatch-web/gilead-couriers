@@ -91,6 +91,22 @@
       .estimate .label { font-size: 12px; color:#555; margin-bottom: 6px; }
       .estimate .value { font-size: 18px; font-weight: 900; letter-spacing: 0.2px; }
       .estimate .warn { margin-top: 8px; font-size: 12px; color:#7a1c00; }
+
+      /* ADDED: compact checkbox row */
+      .checkrow {
+        display:flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 10px;
+      }
+      .checkrow input[type="checkbox"]{
+        width:auto;
+        transform: scale(1.1);
+      }
+      .checkrow .checklabel{
+        font-weight:600;
+        margin:0;
+      }
     </style>
   </head>
 
@@ -143,6 +159,16 @@
           <div class="hint">
             Return same day prices as a dedicated shuttle (miles are calculated for one-way, then priced as a round trip).
           </div>
+
+          <!-- ADDED: Immediate delivery flag -->
+          <div class="checkrow">
+            <input id="immediateDelivery" name="immediateDelivery" type="checkbox" />
+            <label class="checklabel" for="immediateDelivery">Immediate delivery (pickup within 1–4 hours)</label>
+          </div>
+          <div class="hint">
+            Select only if you require a rapid pickup window. This applies a dedicated-response premium.
+          </div>
+          <!-- END ADDED -->
 
           <!-- PICKUP -->
           <label for="pickup">Pickup address *</label>
@@ -258,76 +284,145 @@
         const estimateWarn = document.getElementById("estimateWarn");
 
         // ---------------------------
-        // BASE PRICING (DEFAULT / OTHER) — PREMIUM RETAIL LOGIC
+        // BASE PRICING (FALLBACK ONLY)
         // ---------------------------
         const PRICING = {
           baseUpTo20: 120,
-          perMileOver20: 3.5,
-          uplift: [
-            { min: 80, max: 119, add: 50 },
-            { min: 120, max: 179, add: 90 }
-          ],
-          manualQuoteMiles: 180,
-
+          perMileOver20: 2.75,          // UPDATED (fallback now sensible)
+          uplift: [],                   // UPDATED (fallback no distance uplifts)
+          manualQuoteMiles: 240,        // UPDATED (fallback higher than 180)
           urgencyMinutes: 180,
-          urgencyAdd: 40,
-          after17Add: 35,
-          weekendAdd: 60,
-          bankHolidayAdd: 90,
-
-          rounding: 5
+          urgencyAdd: 30,
+          after17Add: 30,
+          weekendAdd: 55,
+          bankHolidayAdd: 85,
+          immediateAdd: 45,             // ADDED (fallback immediate premium)
+          rounding: 10
         };
 
         // ---------------------------
-        // INDUSTRY PRICING PROFILES (CONSISTENT RETURN-SAME-DAY BEHAVIOUR)
+        // INDUSTRY PRICING PROFILES (MATCH API PR-PROFILES-V3.0)
         // ---------------------------
         const INDUSTRY_PRICING = {
           "Aerospace": {
             oneway: {
               baseUpTo20: 120,
-
-              /* UPDATED: lower per-mile for a sensible Aeromet one-way anchor */
               perMileOver20: 2.25,
-
-              /* UPDATED: shift uplift so 190 miles does NOT hit the old 180–259 premium band
-                 - Extend the mid band up to 210 miles
-                 - Move the high band to start at 211 miles
-                 - Tune mid-band add so 190 miles anchors to ~£520 (rounded to £10)
-              */
               uplift: [
                 { min: 80,  max: 119, add: 35 },
                 { min: 120, max: 210, add: 20 },
                 { min: 211, max: 259, add: 105 }
               ],
-
-              manualQuoteMiles: 260,
+              manualQuoteMiles: 260,     // one-way miles
               urgencyMinutes: 180,
               urgencyAdd: 25,
               after17Add: 25,
               weekendAdd: 50,
               bankHolidayAdd: 80,
+              immediateAdd: 30,          // ADDED
               rounding: 10
             },
             return_same_day: {
               baseUpTo20: 120,
-
-              // Recalibrated, non-linear:
-              // Effective miles = 2× one-way miles.
-              // 156 one-way => 312 effective => £500 (rounded to £10)
-              // 190 one-way => 380 effective => £650 (rounded to £10)
-              perMileOver20: 1.30,
-
-              // Distance uplift only for longer return shuttles (effective miles ≥ 340)
+              perMileOver20: 1.30,       // effective miles
               uplift: [
                 { min: 340, max: 520, add: 60 }
               ],
-
-              manualQuoteMiles: 520, // effective miles
+              manualQuoteMiles: 520,     // effective miles
               urgencyMinutes: 180,
               urgencyAdd: 25,
               after17Add: 25,
               weekendAdd: 50,
               bankHolidayAdd: 80,
+              immediateAdd: 30,          // ADDED
+              rounding: 10
+            }
+          },
+
+          // Tier 1 – Regulated premium
+          "Legal": {
+            oneway: {
+              baseUpTo20: 120,
+              perMileOver20: 2.65,
+              uplift: [],
+              manualQuoteMiles: 240,
+              urgencyMinutes: 180,
+              urgencyAdd: 40,
+              after17Add: 35,
+              weekendAdd: 60,
+              bankHolidayAdd: 90,
+              immediateAdd: 60,          // ADDED
+              rounding: 10
+            },
+            return_same_day: {
+              baseUpTo20: 120,
+              perMileOver20: 2.00,       // effective miles
+              uplift: [],
+              manualQuoteMiles: 240,     // effective miles
+              urgencyMinutes: 180,
+              urgencyAdd: 40,
+              after17Add: 35,
+              weekendAdd: 60,
+              bankHolidayAdd: 90,
+              immediateAdd: 60,          // ADDED
+              rounding: 10
+            }
+          },
+
+          "Medical": {
+            oneway: {
+              baseUpTo20: 120,
+              perMileOver20: 2.65,
+              uplift: [],
+              manualQuoteMiles: 240,
+              urgencyMinutes: 180,
+              urgencyAdd: 40,
+              after17Add: 35,
+              weekendAdd: 60,
+              bankHolidayAdd: 90,
+              immediateAdd: 60,          // ADDED
+              rounding: 10
+            },
+            return_same_day: {
+              baseUpTo20: 120,
+              perMileOver20: 2.00,
+              uplift: [],
+              manualQuoteMiles: 240,
+              urgencyMinutes: 180,
+              urgencyAdd: 40,
+              after17Add: 35,
+              weekendAdd: 60,
+              bankHolidayAdd: 90,
+              immediateAdd: 60,          // ADDED
+              rounding: 10
+            }
+          },
+
+          "Financial Services": {
+            oneway: {
+              baseUpTo20: 120,
+              perMileOver20: 2.65,
+              uplift: [],
+              manualQuoteMiles: 240,
+              urgencyMinutes: 180,
+              urgencyAdd: 40,
+              after17Add: 35,
+              weekendAdd: 60,
+              bankHolidayAdd: 90,
+              immediateAdd: 60,          // ADDED
+              rounding: 10
+            },
+            return_same_day: {
+              baseUpTo20: 120,
+              perMileOver20: 2.00,
+              uplift: [],
+              manualQuoteMiles: 240,
+              urgencyMinutes: 180,
+              urgencyAdd: 40,
+              after17Add: 35,
+              weekendAdd: 60,
+              bankHolidayAdd: 90,
+              immediateAdd: 60,          // ADDED
               rounding: 10
             }
           },
@@ -335,63 +430,58 @@
           "Defence": {
             oneway: {
               baseUpTo20: 120,
-              perMileOver20: 2.35,
-              uplift: [
-                { min: 80, max: 119, add: 40 },
-                { min: 120, max: 179, add: 70 }
-              ],
+              perMileOver20: 2.65,
+              uplift: [],
               manualQuoteMiles: 240,
               urgencyMinutes: 180,
-              urgencyAdd: 30,
-              after17Add: 30,
-              weekendAdd: 55,
-              bankHolidayAdd: 85,
+              urgencyAdd: 40,
+              after17Add: 35,
+              weekendAdd: 60,
+              bankHolidayAdd: 90,
+              immediateAdd: 60,          // ADDED
               rounding: 10
             },
             return_same_day: {
               baseUpTo20: 120,
-              perMileOver20: 1.85,
-              uplift: [
-                { min: 260, max: 520, add: 40 }
-              ],
-              manualQuoteMiles: 480,
+              perMileOver20: 2.00,
+              uplift: [],
+              manualQuoteMiles: 240,
               urgencyMinutes: 180,
-              urgencyAdd: 30,
-              after17Add: 30,
-              weekendAdd: 55,
-              bankHolidayAdd: 85,
+              urgencyAdd: 40,
+              after17Add: 35,
+              weekendAdd: 60,
+              bankHolidayAdd: 90,
+              immediateAdd: 60,          // ADDED
               rounding: 10
             }
           },
 
+          // Tier 2 – Commercial
           "Engineering": {
             oneway: {
               baseUpTo20: 120,
-              perMileOver20: 2.5,
-              uplift: [
-                { min: 80, max: 119, add: 45 },
-                { min: 120, max: 179, add: 80 }
-              ],
+              perMileOver20: 2.50,
+              uplift: [],
               manualQuoteMiles: 220,
               urgencyMinutes: 180,
               urgencyAdd: 30,
               after17Add: 30,
               weekendAdd: 55,
               bankHolidayAdd: 85,
+              immediateAdd: 45,          // ADDED
               rounding: 10
             },
             return_same_day: {
               baseUpTo20: 120,
-              perMileOver20: 1.95,
-              uplift: [
-                { min: 240, max: 480, add: 35 }
-              ],
-              manualQuoteMiles: 440,
+              perMileOver20: 1.85,
+              uplift: [],
+              manualQuoteMiles: 220,
               urgencyMinutes: 180,
               urgencyAdd: 30,
               after17Add: 30,
               weekendAdd: 55,
               bankHolidayAdd: 85,
+              immediateAdd: 45,          // ADDED
               rounding: 10
             }
           },
@@ -399,146 +489,58 @@
           "Government / Public Sector": {
             oneway: {
               baseUpTo20: 120,
-              perMileOver20: 2.4,
-              uplift: [
-                { min: 80, max: 119, add: 40 },
-                { min: 120, max: 179, add: 70 }
-              ],
+              perMileOver20: 2.50,
+              uplift: [],
               manualQuoteMiles: 220,
               urgencyMinutes: 180,
-              urgencyAdd: 25,
-              after17Add: 25,
-              weekendAdd: 50,
-              bankHolidayAdd: 80,
+              urgencyAdd: 30,
+              after17Add: 30,
+              weekendAdd: 55,
+              bankHolidayAdd: 85,
+              immediateAdd: 45,          // ADDED
               rounding: 10
             },
             return_same_day: {
               baseUpTo20: 120,
               perMileOver20: 1.85,
-              uplift: [
-                { min: 240, max: 480, add: 25 }
-              ],
-              manualQuoteMiles: 440,
+              uplift: [],
+              manualQuoteMiles: 220,
               urgencyMinutes: 180,
-              urgencyAdd: 25,
-              after17Add: 25,
-              weekendAdd: 50,
-              bankHolidayAdd: 80,
+              urgencyAdd: 30,
+              after17Add: 30,
+              weekendAdd: 55,
+              bankHolidayAdd: 85,
+              immediateAdd: 45,          // ADDED
               rounding: 10
             }
           },
 
-          "Legal": {
-            oneway: {
-              baseUpTo20: 120,
-              perMileOver20: 3.5,
-              uplift: [
-                { min: 80, max: 119, add: 50 },
-                { min: 120, max: 179, add: 90 }
-              ],
-              manualQuoteMiles: 180,
-              urgencyMinutes: 180,
-              urgencyAdd: 45,
-              after17Add: 40,
-              weekendAdd: 70,
-              bankHolidayAdd: 95,
-              rounding: 5
-            },
-            return_same_day: {
-              baseUpTo20: 120,
-              perMileOver20: 2.85,
-              uplift: [
-                { min: 240, max: 480, add: 80 }
-              ],
-              manualQuoteMiles: 360,
-              urgencyMinutes: 180,
-              urgencyAdd: 55,
-              after17Add: 45,
-              weekendAdd: 80,
-              bankHolidayAdd: 110,
-              rounding: 5
-            }
-          },
-
-          "Medical": {
-            oneway: {
-              baseUpTo20: 120,
-              perMileOver20: 3.1,
-              uplift: [
-                { min: 80, max: 119, add: 45 },
-                { min: 120, max: 179, add: 85 }
-              ],
-              manualQuoteMiles: 200,
-              urgencyMinutes: 180,
-              urgencyAdd: 40,
-              after17Add: 35,
-              weekendAdd: 70,
-              bankHolidayAdd: 100,
-              rounding: 5
-            },
-            return_same_day: {
-              baseUpTo20: 120,
-              perMileOver20: 2.65,
-              uplift: [
-                { min: 240, max: 520, add: 70 }
-              ],
-              manualQuoteMiles: 400,
-              urgencyMinutes: 180,
-              urgencyAdd: 50,
-              after17Add: 40,
-              weekendAdd: 80,
-              bankHolidayAdd: 120,
-              rounding: 5
-            }
-          },
-
-          "Financial Services": {
-            oneway: {
-              baseUpTo20: 120,
-              perMileOver20: 3.25,
-              uplift: [
-                { min: 80, max: 119, add: 50 },
-                { min: 120, max: 179, add: 90 }
-              ],
-              manualQuoteMiles: 200,
-              urgencyMinutes: 180,
-              urgencyAdd: 40,
-              after17Add: 40,
-              weekendAdd: 65,
-              bankHolidayAdd: 95,
-              rounding: 5
-            },
-            return_same_day: {
-              baseUpTo20: 120,
-              perMileOver20: 2.70,
-              uplift: [
-                { min: 240, max: 520, add: 75 }
-              ],
-              manualQuoteMiles: 400,
-              urgencyMinutes: 180,
-              urgencyAdd: 50,
-              after17Add: 45,
-              weekendAdd: 75,
-              bankHolidayAdd: 110,
-              rounding: 5
-            }
-          },
-
           "Other": {
-            oneway: null,
+            oneway: {
+              baseUpTo20: 120,
+              perMileOver20: 2.50,
+              uplift: [],
+              manualQuoteMiles: 220,
+              urgencyMinutes: 180,
+              urgencyAdd: 30,
+              after17Add: 30,
+              weekendAdd: 55,
+              bankHolidayAdd: 85,
+              immediateAdd: 45,          // ADDED
+              rounding: 10
+            },
             return_same_day: {
               baseUpTo20: 120,
-              perMileOver20: 2.35,
-              uplift: [
-                { min: 240, max: 480, add: 50 }
-              ],
-              manualQuoteMiles: 360,
+              perMileOver20: 1.85,
+              uplift: [],
+              manualQuoteMiles: 220,
               urgencyMinutes: 180,
-              urgencyAdd: 40,
-              after17Add: 35,
-              weekendAdd: 65,
-              bankHolidayAdd: 95,
-              rounding: 5
+              urgencyAdd: 30,
+              after17Add: 30,
+              weekendAdd: 55,
+              bankHolidayAdd: 85,
+              immediateAdd: 45,          // ADDED
+              rounding: 10
             }
           }
         };
@@ -551,6 +553,11 @@
         function getVal(id) {
           const el = document.getElementById(id);
           return el ? el.value : "";
+        }
+
+        function getChecked(id) {
+          const el = document.getElementById(id);
+          return !!(el && el.checked);
         }
 
         function parseMiles(v) {
@@ -576,12 +583,11 @@
         function getPricingProfile(industry, serviceType) {
           const key = String(industry || "").trim();
           const st = String(serviceType || "oneway").trim();
-
           const industryPack = INDUSTRY_PRICING[key];
           const override = industryPack && industryPack[st] ? industryPack[st] : null;
 
           const merged = override ? { ...PRICING, ...override } : { ...PRICING };
-          if (override && override.uplift) merged.uplift = override.uplift;
+          if (override && Object.prototype.hasOwnProperty.call(override, "uplift")) merged.uplift = override.uplift;
           return merged;
         }
 
@@ -601,7 +607,7 @@
           const milesEl = document.getElementById("miles");
 
           if (!from || !to) {
-            setStatus("Enter valid UK postcodes in Pickup and Drop-off, then click 'Calculate miles automatically'.", "error");
+            setStatus("Enter valid UK postcodes in Pickup and Drop-off, then click the miles button.", "error");
             if (milesEl) milesEl.readOnly = false;
             return;
           }
@@ -645,7 +651,7 @@
           });
         });
 
-        function computeTotal(oneWayMiles, whenDateStr, whenTimeStr, industry, serviceType) {
+        function computeTotal(oneWayMiles, whenDateStr, whenTimeStr, industry, serviceType, immediateDelivery) {
           const P = getPricingProfile(industry, serviceType);
 
           if (!oneWayMiles || oneWayMiles < 1) {
@@ -660,7 +666,7 @@
               ok: false,
               manual: true,
               total: 0,
-              reason: `For ${P.manualQuoteMiles}+ miles, Gilead issues a manual premium quote.`
+              reason: `Manual quote. For ${P.manualQuoteMiles}+ miles, Gilead issues a manual premium quote.`
             };
           }
 
@@ -701,6 +707,9 @@
           if (bankHoliday) total += P.bankHolidayAdd;
           else if (weekend) total += P.weekendAdd;
 
+          // ADDED: Immediate delivery premium (explicit flag)
+          if (immediateDelivery) total += (P.immediateAdd || 0);
+
           total = roundToNearest(total, P.rounding);
 
           const note = isReturn ? "Return same day pricing applied (round trip)." : "";
@@ -718,6 +727,7 @@
           const whenTime = getVal("whenTime");
           const industry = getVal("industry");
           const serviceType = getVal("serviceType");
+          const immediateDelivery = getChecked("immediateDelivery");
 
           if (!oneWayMiles) {
             estimateBox.style.display = "none";
@@ -727,7 +737,7 @@
             return;
           }
 
-          const r = computeTotal(oneWayMiles, whenDate, whenTime, industry, serviceType);
+          const r = computeTotal(oneWayMiles, whenDate, whenTime, industry, serviceType, immediateDelivery);
 
           estimateBox.style.display = "block";
 
@@ -749,7 +759,7 @@
           }
         }
 
-        ["industry", "serviceType", "miles", "whenDate", "whenTime"].forEach((id) => {
+        ["industry", "serviceType", "miles", "whenDate", "whenTime", "immediateDelivery"].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.addEventListener("input", renderEstimate);
           if (el) el.addEventListener("change", renderEstimate);
@@ -757,6 +767,7 @@
 
         renderEstimate();
 
+        // show stored booking reference on success redirect
         try {
           const params = new URLSearchParams(window.location.search || "");
           const qsStatus = params.get("status");
@@ -779,6 +790,7 @@
             company: getVal("company").trim(),
             industry: getVal("industry"),
             serviceType: getVal("serviceType"),
+            immediateDelivery: getChecked("immediateDelivery"),  // ADDED
             pickup: getVal("pickup").trim(),
             dropoff: getVal("dropoff").trim(),
             miles: getVal("miles"),
@@ -801,7 +813,7 @@
           const effectiveMiles = (payload.serviceType === "return_same_day") ? (oneWayMiles * 2) : oneWayMiles;
 
           if (effectiveMiles >= P.manualQuoteMiles) {
-            setStatus(`For ${P.manualQuoteMiles}+ miles, Gilead issues a manual premium quote. Please contact dispatch for a bespoke price.`, "error");
+            setStatus(`Manual quote. For ${P.manualQuoteMiles}+ miles, Gilead issues a manual premium quote. Please contact dispatch for a bespoke price.`, "error");
             submitBtn.disabled = false;
             return;
           }
