@@ -13,10 +13,12 @@ module.exports = async function handler(req, res) {
     const {
       company = '',
       industry = '',
+      serviceType = 'oneway',   // ADDED: aligns to book.html (oneway / return_same_day)
       pickup = '',
       dropoff = '',
       miles = '',
       email = '',
+      poNumber = '',            // ADDED: aligns to book.html
       whenDate = '',
       whenTime = '',
       notes = ''
@@ -32,6 +34,9 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid miles' });
     }
 
+    const serviceTypeSafe = String(serviceType || 'oneway').trim();
+    const isReturnSameDay = serviceTypeSafe === 'return_same_day';
+
     // ---------- Helpers (UTC-based, consistent with your schedule logic) ----------
     // NOTE: This treats whenDate as "YYYY-MM-DD" and whenTime as "HH:MM".
     // We use UTC ("Z") to keep behaviour consistent with your existing scheduleStart/End logic.
@@ -40,14 +45,13 @@ module.exports = async function handler(req, res) {
       return Number.isFinite(dt.getTime()) ? dt : null;
     }
 
-    function startOfTodayUTC() {
-      const now = new Date();
-      return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
-    }
-
     function roundToNearest(amount, nearest) {
       const n = Number(nearest) || 1;
       return Math.round(amount / n) * n;
+    }
+
+    function n2(v) {
+      return Math.round(Number(v || 0) * 100) / 100;
     }
 
     // --- ADDITION: Auto-generated Booking Reference (GC-YYYYMMDD-XXXX) ---
@@ -61,47 +65,303 @@ module.exports = async function handler(req, res) {
     }
     // --- END ADDITION ---
 
-    // ---------- Premium Pricing (Gilead PR-PREMIUM-V1.0) ----------
-    // Positioning: top-of-market dedicated A-to-B courier
-    //
-    // Base:
-    //   - up to 20 miles: £120 minimum
-    // Distance:
-    //   - beyond 20 miles: £3.50 per mile (over-20 miles only)
-    // Distance uplifts:
-    //   - 80–119 miles: +£50
-    //   - 120–179 miles: +£90
-    //   - 180+ miles: manual quote (block checkout)
-    // Urgency:
-    //   - < 3 hours notice: +£40
-    // Out-of-hours:
-    //   - after 17:00: +£35
-    // Weekend / Bank Holiday:
-    //   - weekend: +£60
-    //   - bank holiday: +£90 (not auto-detected here unless you add a UK BH calendar)
-    // Rounding:
-    //   - round final to nearest £5
-    const PRICING_VERSION = 'PR-PREMIUM-V1.0';
+    // ---------- Pricing (Aligned to book.html Industry Pricing Profiles) ----------
+    // IMPORTANT: Miles in this API are "one-way" miles. For return_same_day we price as a round trip (effective miles = 2x).
+    const PRICING_VERSION = 'PR-PROFILES-V2.0';
 
-    const BASE_WITHIN_20 = 120;
-    const PER_MILE_OVER_20 = 3.5;
-    const MANUAL_QUOTE_MILES = 500;
+    // BASE PRICING (DEFAULT / OTHER) — PREMIUM RETAIL LOGIC
+    const BASE_PRICING = {
+      baseUpTo20: 120,
+      perMileOver20: 3.5,
+      uplift: [
+        { min: 80, max: 119, add: 50 },
+        { min: 120, max: 179, add: 90 }
+      ],
+      manualQuoteMiles: 180,
 
-    const DIST_UPLIFT_80_119 = 50;
-    const DIST_UPLIFT_120_179 = 90;
+      urgencyMinutes: 180,
+      urgencyAdd: 40,
+      after17Add: 35,
+      weekendAdd: 60,
+      bankHolidayAdd: 90,
 
-    const URGENCY_MINUTES = 180; // < 3 hours
-    const UPLIFT_URGENCY = 40;
+      rounding: 5
+    };
 
-    const UPLIFT_AFTER_1700 = 35;
-    const UPLIFT_WEEKEND = 60;
-    const UPLIFT_BANK_HOLIDAY = 90;
+    // INDUSTRY PRICING PROFILES (CONSISTENT RETURN-SAME-DAY BEHAVIOUR)
+    const INDUSTRY_PRICING = {
+      "Aerospace": {
+        oneway: {
+          baseUpTo20: 120,
 
-    const ROUND_NEAREST = 5;
+          // Aeromet one-way anchor (190 miles -> £520 rounded to £10)
+          perMileOver20: 2.25,
 
-    if (milesNum >= MANUAL_QUOTE_MILES) {
+          // Minimal uplift (replaces old large uplift bands)
+          uplift: [
+            { min: 120, max: 210, add: 20 }
+          ],
+
+          manualQuoteMiles: 260,
+          urgencyMinutes: 180,
+          urgencyAdd: 25,
+          after17Add: 25,
+          weekendAdd: 50,
+          bankHolidayAdd: 80,
+          rounding: 10
+        },
+        return_same_day: {
+          baseUpTo20: 120,
+
+          // Return same day anchor (190 one-way => 380 effective => £650 rounded to £10)
+          perMileOver20: 1.30,
+
+          // Distance uplift for longer return shuttles (effective miles)
+          uplift: [
+            { min: 340, max: 520, add: 60 }
+          ],
+
+          manualQuoteMiles: 520, // effective miles
+          urgencyMinutes: 180,
+          urgencyAdd: 25,
+          after17Add: 25,
+          weekendAdd: 50,
+          bankHolidayAdd: 80,
+          rounding: 10
+        }
+      },
+
+      "Defence": {
+        oneway: {
+          baseUpTo20: 120,
+          perMileOver20: 2.35,
+          uplift: [
+            { min: 80, max: 119, add: 40 },
+            { min: 120, max: 179, add: 70 }
+          ],
+          manualQuoteMiles: 240,
+          urgencyMinutes: 180,
+          urgencyAdd: 30,
+          after17Add: 30,
+          weekendAdd: 55,
+          bankHolidayAdd: 85,
+          rounding: 10
+        },
+        return_same_day: {
+          baseUpTo20: 120,
+          perMileOver20: 1.85,
+          uplift: [
+            { min: 260, max: 520, add: 40 }
+          ],
+          manualQuoteMiles: 480,
+          urgencyMinutes: 180,
+          urgencyAdd: 30,
+          after17Add: 30,
+          weekendAdd: 55,
+          bankHolidayAdd: 85,
+          rounding: 10
+        }
+      },
+
+      "Engineering": {
+        oneway: {
+          baseUpTo20: 120,
+          perMileOver20: 2.5,
+          uplift: [
+            { min: 80, max: 119, add: 45 },
+            { min: 120, max: 179, add: 80 }
+          ],
+          manualQuoteMiles: 220,
+          urgencyMinutes: 180,
+          urgencyAdd: 30,
+          after17Add: 30,
+          weekendAdd: 55,
+          bankHolidayAdd: 85,
+          rounding: 10
+        },
+        return_same_day: {
+          baseUpTo20: 120,
+          perMileOver20: 1.95,
+          uplift: [
+            { min: 240, max: 480, add: 35 }
+          ],
+          manualQuoteMiles: 440,
+          urgencyMinutes: 180,
+          urgencyAdd: 30,
+          after17Add: 30,
+          weekendAdd: 55,
+          bankHolidayAdd: 85,
+          rounding: 10
+        }
+      },
+
+      "Government / Public Sector": {
+        oneway: {
+          baseUpTo20: 120,
+          perMileOver20: 2.4,
+          uplift: [
+            { min: 80, max: 119, add: 40 },
+            { min: 120, max: 179, add: 70 }
+          ],
+          manualQuoteMiles: 220,
+          urgencyMinutes: 180,
+          urgencyAdd: 25,
+          after17Add: 25,
+          weekendAdd: 50,
+          bankHolidayAdd: 80,
+          rounding: 10
+        },
+        return_same_day: {
+          baseUpTo20: 120,
+          perMileOver20: 1.85,
+          uplift: [
+            { min: 240, max: 480, add: 25 }
+          ],
+          manualQuoteMiles: 440,
+          urgencyMinutes: 180,
+          urgencyAdd: 25,
+          after17Add: 25,
+          weekendAdd: 50,
+          bankHolidayAdd: 80,
+          rounding: 10
+        }
+      },
+
+      "Legal": {
+        oneway: {
+          baseUpTo20: 120,
+          perMileOver20: 3.5,
+          uplift: [
+            { min: 80, max: 119, add: 50 },
+            { min: 120, max: 179, add: 90 }
+          ],
+          manualQuoteMiles: 180,
+          urgencyMinutes: 180,
+          urgencyAdd: 45,
+          after17Add: 40,
+          weekendAdd: 70,
+          bankHolidayAdd: 95,
+          rounding: 5
+        },
+        return_same_day: {
+          baseUpTo20: 120,
+          perMileOver20: 2.85,
+          uplift: [
+            { min: 240, max: 480, add: 80 }
+          ],
+          manualQuoteMiles: 360,
+          urgencyMinutes: 180,
+          urgencyAdd: 55,
+          after17Add: 45,
+          weekendAdd: 80,
+          bankHolidayAdd: 110,
+          rounding: 5
+        }
+      },
+
+      "Medical": {
+        oneway: {
+          baseUpTo20: 120,
+          perMileOver20: 3.1,
+          uplift: [
+            { min: 80, max: 119, add: 45 },
+            { min: 120, max: 179, add: 85 }
+          ],
+          manualQuoteMiles: 200,
+          urgencyMinutes: 180,
+          urgencyAdd: 40,
+          after17Add: 35,
+          weekendAdd: 70,
+          bankHolidayAdd: 100,
+          rounding: 5
+        },
+        return_same_day: {
+          baseUpTo20: 120,
+          perMileOver20: 2.65,
+          uplift: [
+            { min: 240, max: 520, add: 70 }
+          ],
+          manualQuoteMiles: 400,
+          urgencyMinutes: 180,
+          urgencyAdd: 50,
+          after17Add: 40,
+          weekendAdd: 80,
+          bankHolidayAdd: 120,
+          rounding: 5
+        }
+      },
+
+      "Financial Services": {
+        oneway: {
+          baseUpTo20: 120,
+          perMileOver20: 3.25,
+          uplift: [
+            { min: 80, max: 119, add: 50 },
+            { min: 120, max: 179, add: 90 }
+          ],
+          manualQuoteMiles: 200,
+          urgencyMinutes: 180,
+          urgencyAdd: 40,
+          after17Add: 40,
+          weekendAdd: 65,
+          bankHolidayAdd: 95,
+          rounding: 5
+        },
+        return_same_day: {
+          baseUpTo20: 120,
+          perMileOver20: 2.70,
+          uplift: [
+            { min: 240, max: 520, add: 75 }
+          ],
+          manualQuoteMiles: 400,
+          urgencyMinutes: 180,
+          urgencyAdd: 50,
+          after17Add: 45,
+          weekendAdd: 75,
+          bankHolidayAdd: 110,
+          rounding: 5
+        }
+      },
+
+      "Other": {
+        oneway: null,
+        return_same_day: {
+          baseUpTo20: 120,
+          perMileOver20: 2.35,
+          uplift: [
+            { min: 240, max: 480, add: 50 }
+          ],
+          manualQuoteMiles: 360,
+          urgencyMinutes: 180,
+          urgencyAdd: 40,
+          after17Add: 35,
+          weekendAdd: 65,
+          bankHolidayAdd: 95,
+          rounding: 5
+        }
+      }
+    };
+
+    function getPricingProfile(industryKey, st) {
+      const key = String(industryKey || '').trim();
+      const s = (st === 'return_same_day') ? 'return_same_day' : 'oneway';
+
+      const industryPack = INDUSTRY_PRICING[key];
+      const override = industryPack && industryPack[s] ? industryPack[s] : null;
+
+      const merged = override ? { ...BASE_PRICING, ...override } : { ...BASE_PRICING };
+      if (override && override.uplift) merged.uplift = override.uplift;
+      return merged;
+    }
+
+    const P = getPricingProfile(industry, serviceTypeSafe);
+
+    // Effective miles used for pricing / manual quote checks
+    const effectiveMiles = isReturnSameDay ? (milesNum * 2) : milesNum;
+
+    if (effectiveMiles >= Number(P.manualQuoteMiles)) {
       return res.status(400).json({
-        error: 'Manual quote required for 500+ miles'
+        error: `Manual quote required for ${P.manualQuoteMiles}+ miles`
       });
     }
 
@@ -117,31 +377,34 @@ module.exports = async function handler(req, res) {
     const isWeekend = (dayOfWeekUTC === 0 || dayOfWeekUTC === 6);
 
     // Bank Holiday detection: placeholder (always false).
-    // If you later add a UK bank holiday calendar lookup, set isBankHoliday accordingly.
     const isBankHoliday = false;
 
-    // Urgency: < 3 hours notice (UTC)
+    // Urgency: < N minutes notice (UTC)
     const now = new Date();
     const diffMinutes = (jobDT.getTime() - now.getTime()) / 60000;
-    const isUrgent = diffMinutes >= 0 && diffMinutes < URGENCY_MINUTES;
+    const isUrgent = diffMinutes >= 0 && diffMinutes < Number(P.urgencyMinutes || 0);
 
-    // Base + distance component
-    const over20 = Math.max(0, milesNum - 20);
-    const pricingBase = BASE_WITHIN_20;
-    const pricingDistance = over20 * PER_MILE_OVER_20;
+    // Base + distance component (based on EFFECTIVE miles)
+    const over20 = Math.max(0, effectiveMiles - 20);
+    const pricingBase = Number(P.baseUpTo20);
+    const pricingDistance = over20 * Number(P.perMileOver20);
 
-    // Distance uplift bracket (based on TOTAL miles)
+    // Distance uplift bracket (based on EFFECTIVE miles)
     let pricingDistanceUplift = 0;
-    if (milesNum >= 80 && milesNum <= 119) pricingDistanceUplift = DIST_UPLIFT_80_119;
-    else if (milesNum >= 120 && milesNum <= 179) pricingDistanceUplift = DIST_UPLIFT_120_179;
+    for (const b of (P.uplift || [])) {
+      if (effectiveMiles >= b.min && effectiveMiles <= b.max) {
+        pricingDistanceUplift = Number(b.add) || 0;
+        break;
+      }
+    }
 
     // Time-based uplifts
-    const pricingUrgency = isUrgent ? UPLIFT_URGENCY : 0;
-    const pricingAfter1700 = isAfter1700 ? UPLIFT_AFTER_1700 : 0;
+    const pricingUrgency = isUrgent ? Number(P.urgencyAdd || 0) : 0;
+    const pricingAfter1700 = isAfter1700 ? Number(P.after17Add || 0) : 0;
 
     // Weekend / Bank Holiday (bank holiday overrides weekend)
-    const pricingWeekend = (!isBankHoliday && isWeekend) ? UPLIFT_WEEKEND : 0;
-    const pricingBankHoliday = isBankHoliday ? UPLIFT_BANK_HOLIDAY : 0;
+    const pricingWeekend = (!isBankHoliday && isWeekend) ? Number(P.weekendAdd || 0) : 0;
+    const pricingBankHoliday = isBankHoliday ? Number(P.bankHolidayAdd || 0) : 0;
 
     const totalBeforeRounding =
       pricingBase +
@@ -152,8 +415,8 @@ module.exports = async function handler(req, res) {
       pricingWeekend +
       pricingBankHoliday;
 
-    const calculated = roundToNearest(totalBeforeRounding, ROUND_NEAREST);
-    const amountPence = Math.round(calculated * 100);
+    const calculated = roundToNearest(totalBeforeRounding, Number(P.rounding || 1));
+    const amountPence = Math.round(Number(calculated) * 100);
 
     // ---------- Schedule window computation ----------
     const AVG_MPH = 30;     // assumption
@@ -161,7 +424,7 @@ module.exports = async function handler(req, res) {
 
     function toISO(dateStr, timeStr) {
       const dt = new Date(`${dateStr}T${timeStr}:00.000Z`);
-      return Number.isFinite(dt.getTime()) ? dt.toISOString() : null;
+      return Number.isFinite(dt.getTime()) ? dt : null;
     }
 
     const scheduleEnd = toISO(whenDate, whenTime);
@@ -169,7 +432,8 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid whenDate/whenTime' });
     }
 
-    const driveMinutes = (milesNum / AVG_MPH) * 60;
+    // Schedule uses EFFECTIVE miles (return_same_day consumes more time)
+    const driveMinutes = (effectiveMiles / AVG_MPH) * 60;
     const totalMinutes = driveMinutes + BUFFER_MIN;
     const scheduleStart = new Date(new Date(scheduleEnd).getTime() - totalMinutes * 60 * 1000).toISOString();
 
@@ -186,36 +450,41 @@ module.exports = async function handler(req, res) {
     // --- END ADDITION ---
 
     // ---------- Stripe metadata ----------
-    // Keep your existing metadata keys, but expand pricing audit for Make/Airtable traceability.
     const metadata = {
       company: String(company || ''),
       industry: String(industry || ''),
+      serviceType: String(serviceTypeSafe || 'oneway'),
       pickup: String(pickup),
       dropoff: String(dropoff),
-      miles: String(Math.round(milesNum)),
+
+      // miles: keep both one-way and effective for traceability
+      miles_oneway: String(n2(milesNum)),
+      miles_effective: String(n2(effectiveMiles)),
+
       email: String(email),
+      poNumber: String(poNumber || ''),
       whenDate: String(whenDate),
       whenTime: String(whenTime),
       notes: String(notes || ''),
       scheduleStart: String(scheduleStart),
       scheduleEnd: String(scheduleEnd),
 
-      // --- ADDITION: Booking Reference ---
       bookingRef: String(bookingRef),
-      // --- END ADDITION ---
 
-      // Pricing audit (premium, itemised)
+      // Pricing audit (profile-based, itemised)
       pricingRuleVersion: PRICING_VERSION,
-      pricing_base: String(pricingBase),
-      pricing_distance: String(Math.round(pricingDistance * 100) / 100),
-      pricing_uplift_distance: String(pricingDistanceUplift),
-      pricing_urgency: String(pricingUrgency),
-      pricing_after1700: String(pricingAfter1700),
-      pricing_weekend: String(pricingWeekend),
-      pricing_bank_holiday: String(pricingBankHoliday),
-      pricing_total_before_rounding: String(Math.round(totalBeforeRounding * 100) / 100),
-      pricing_rounding_to: String(ROUND_NEAREST),
-      calculatedPrice: String(calculated),
+      pricing_profile_rounding_to: String(Number(P.rounding || 1)),
+      pricing_profile_manual_quote_miles: String(Number(P.manualQuoteMiles || 0)),
+      pricing_base: String(n2(pricingBase)),
+      pricing_per_mile_over20: String(n2(Number(P.perMileOver20))),
+      pricing_distance: String(n2(pricingDistance)),
+      pricing_uplift_distance: String(n2(pricingDistanceUplift)),
+      pricing_urgency: String(n2(pricingUrgency)),
+      pricing_after1700: String(n2(pricingAfter1700)),
+      pricing_weekend: String(n2(pricingWeekend)),
+      pricing_bank_holiday: String(n2(pricingBankHoliday)),
+      pricing_total_before_rounding: String(n2(totalBeforeRounding)),
+      calculatedPrice: String(n2(calculated)),
 
       // Flags
       after1700: String(isAfter1700),
@@ -238,15 +507,13 @@ module.exports = async function handler(req, res) {
             unit_amount: amountPence,
             product_data: {
               name: 'Gilead Courier Booking',
-              description: `Pickup: ${pickup} → Dropoff: ${dropoff} (${Math.round(milesNum)} miles)`
+              description: `Service: ${isReturnSameDay ? 'Return same day' : 'One-way'} | Pickup: ${pickup} → Dropoff: ${dropoff} (${Math.round(milesNum)} miles one-way)`
             }
           }
         }
       ],
       metadata,
-      payment_intent_data: {
-        metadata
-      }
+      payment_intent_data: { metadata }
     });
 
     return res.status(200).json({
@@ -254,9 +521,7 @@ module.exports = async function handler(req, res) {
       calculatedPrice: calculated,
       currency: 'GBP',
       pricingRuleVersion: PRICING_VERSION,
-      // --- ADDITION: Return Booking Reference for optional UI confirmation ---
       bookingRef: bookingRef
-      // --- END ADDITION ---
     });
 
   } catch (err) {
