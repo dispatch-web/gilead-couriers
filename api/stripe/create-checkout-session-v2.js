@@ -19,10 +19,7 @@ module.exports = async function handler(req, res) {
       email = '',
       whenDate = '',
       whenTime = '',
-      notes = '',
-      // --- ADDITION: PO Number (optional) ---
-      poNumber = ''
-      // --- END ADDITION ---
+      notes = ''
     } = req.body || {};
 
     // ---------- Basic validation ----------
@@ -88,7 +85,7 @@ module.exports = async function handler(req, res) {
 
     const BASE_WITHIN_20 = 120;
     const PER_MILE_OVER_20 = 3.5;
-    const MANUAL_QUOTE_MILES = 180;
+    const MANUAL_QUOTE_MILES = 500;
 
     const DIST_UPLIFT_80_119 = 50;
     const DIST_UPLIFT_120_179 = 90;
@@ -104,7 +101,7 @@ module.exports = async function handler(req, res) {
 
     if (milesNum >= MANUAL_QUOTE_MILES) {
       return res.status(400).json({
-        error: 'Manual quote required for 180+ miles'
+        error: 'Manual quote required for 500+ miles'
       });
     }
 
@@ -202,10 +199,6 @@ module.exports = async function handler(req, res) {
       notes: String(notes || ''),
       scheduleStart: String(scheduleStart),
       scheduleEnd: String(scheduleEnd),
-
-      // --- ADDITION: PO Number (optional) ---
-      poNumber: String(poNumber || ''),
-      // --- END ADDITION ---
 
       // --- ADDITION: Booking Reference ---
       bookingRef: String(bookingRef),
