@@ -107,6 +107,85 @@
         font-weight:600;
         margin:0;
       }
+
+      /* ADDED: availability + recurring booking UI */
+      .notice {
+        margin-top: 14px;
+        padding: 12px;
+        border-radius: 12px;
+        background: rgba(11,31,59,0.06);
+        border: 1px solid rgba(11,31,59,0.12);
+      }
+
+      .notice strong {
+        display:block;
+        margin-bottom: 4px;
+      }
+
+      .recurring-box {
+        margin-top: 16px;
+        padding: 14px;
+        border-radius: 12px;
+        background: rgba(11,31,59,0.04);
+        border: 1px solid rgba(11,31,59,0.12);
+      }
+
+      .recurring-intro {
+        font-size: 13px;
+        color:#333;
+        margin: 0 0 12px;
+      }
+
+      .radio-card {
+        display:flex;
+        align-items:flex-start;
+        gap:10px;
+        padding: 12px;
+        border: 1px solid #d7dbe7;
+        border-radius: 12px;
+        background:#fff;
+        margin-bottom: 10px;
+      }
+
+      .radio-card input[type="radio"] {
+        width:auto;
+        margin-top: 3px;
+      }
+
+      .radio-card strong {
+        display:inline-block;
+        margin-right: 8px;
+      }
+
+      .radio-card .mini {
+        display:block;
+        font-size: 12px;
+        color:#666;
+        margin-top: 4px;
+      }
+
+      .recommended-badge {
+        display:inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background:#0B1F3B;
+        color:#fff;
+        vertical-align: middle;
+      }
+
+      .availability-warning {
+        margin-top: 8px;
+        font-size: 12px;
+        color:#b00020;
+        display:none;
+      }
+
+      #customRepeatWrap {
+        display:none;
+        margin-top: 10px;
+      }
     </style>
   </head>
 
@@ -231,15 +310,79 @@
             placeholder="e.g. PO-123456"
           />
 
+          <!-- ADDED: availability note -->
+          <div class="notice">
+            <strong>Booking availability</strong>
+            Gilead bookings are currently available on <strong>Sunday to Wednesday</strong>.
+            <strong>Thursday, Friday and Saturday</strong> are reserved for Aeromet.
+          </div>
+
           <div class="row">
             <div>
               <label for="whenDate">When is this job needed? (date) *</label>
               <input id="whenDate" name="whenDate" type="date" required />
+              <div id="availabilityWarning" class="availability-warning">
+                Thursday, Friday and Saturday are not available for Gilead bookings. Please choose Sunday to Wednesday.
+              </div>
             </div>
 
             <div>
               <label for="whenTime">Time needed by *</label>
               <input id="whenTime" name="whenTime" type="time" required />
+            </div>
+          </div>
+
+          <!-- ADDED: recurring booking section -->
+          <div class="recurring-box">
+            <label>Would you like to make this a recurring booking?</label>
+            <p class="recurring-intro">
+              Most clients secure their preferred day with a recurring weekly booking.
+            </p>
+
+            <label class="radio-card" for="repeat_one_off">
+              <input id="repeat_one_off" type="radio" name="repeatType" value="one_off" checked />
+              <span>
+                <strong>One-off booking</strong>
+                <span class="mini">Book this job as a single request.</span>
+              </span>
+            </label>
+
+            <label class="radio-card" for="repeat_weekly">
+              <input id="repeat_weekly" type="radio" name="repeatType" value="weekly" />
+              <span>
+                <strong>Weekly recurring</strong>
+                <span class="recommended-badge">Recommended</span>
+                <span class="mini">Same day each week. Ideal for securing consistent availability.</span>
+              </span>
+            </label>
+
+            <label class="radio-card" for="repeat_fortnightly">
+              <input id="repeat_fortnightly" type="radio" name="repeatType" value="fortnightly" />
+              <span>
+                <strong>Fortnightly recurring</strong>
+                <span class="mini">Same day every two weeks.</span>
+              </span>
+            </label>
+
+            <label class="radio-card" for="repeat_custom">
+              <input id="repeat_custom" type="radio" name="repeatType" value="custom" />
+              <span>
+                <strong>Custom repeat request</strong>
+                <span class="mini">Tell us your preferred recurring pattern below.</span>
+              </span>
+            </label>
+
+            <div id="customRepeatWrap">
+              <label for="customRepeatDetails">Custom repeat details</label>
+              <textarea
+                id="customRepeatDetails"
+                name="customRepeatDetails"
+                placeholder="e.g. Every Monday and Wednesday for 8 weeks, same collection time"
+              ></textarea>
+            </div>
+
+            <div class="hint">
+              Recurring bookings are treated as booking requests and remain subject to confirmation.
             </div>
           </div>
 
@@ -283,20 +426,26 @@
         const estimateValue = document.getElementById("estimateValue");
         const estimateWarn = document.getElementById("estimateWarn");
 
+        // ADDED: recurring + availability refs
+        const whenDateEl = document.getElementById("whenDate");
+        const availabilityWarningEl = document.getElementById("availabilityWarning");
+        const customRepeatWrap = document.getElementById("customRepeatWrap");
+        const customRepeatDetailsEl = document.getElementById("customRepeatDetails");
+
         // ---------------------------
         // BASE PRICING (FALLBACK ONLY)
         // ---------------------------
         const PRICING = {
           baseUpTo20: 120,
-          perMileOver20: 2.75,          // UPDATED (fallback now sensible)
-          uplift: [],                   // UPDATED (fallback no distance uplifts)
-          manualQuoteMiles: 240,        // UPDATED (fallback higher than 180)
+          perMileOver20: 2.75,
+          uplift: [],
+          manualQuoteMiles: 240,
           urgencyMinutes: 180,
           urgencyAdd: 30,
           after17Add: 30,
           weekendAdd: 55,
           bankHolidayAdd: 85,
-          immediateAdd: 45,             // ADDED (fallback immediate premium)
+          immediateAdd: 45,
           rounding: 10
         };
 
@@ -313,33 +462,32 @@
                 { min: 120, max: 210, add: 20 },
                 { min: 211, max: 259, add: 105 }
               ],
-              manualQuoteMiles: 260,     // one-way miles
+              manualQuoteMiles: 260,
               urgencyMinutes: 180,
               urgencyAdd: 25,
               after17Add: 25,
               weekendAdd: 50,
               bankHolidayAdd: 80,
-              immediateAdd: 30,          // ADDED
+              immediateAdd: 30,
               rounding: 10
             },
             return_same_day: {
               baseUpTo20: 120,
-              perMileOver20: 1.30,       // effective miles
+              perMileOver20: 1.30,
               uplift: [
                 { min: 340, max: 520, add: 60 }
               ],
-              manualQuoteMiles: 520,     // effective miles
+              manualQuoteMiles: 520,
               urgencyMinutes: 180,
               urgencyAdd: 25,
               after17Add: 25,
               weekendAdd: 50,
               bankHolidayAdd: 80,
-              immediateAdd: 30,          // ADDED
+              immediateAdd: 30,
               rounding: 10
             }
           },
 
-          // Tier 1 – Regulated premium
           "Legal": {
             oneway: {
               baseUpTo20: 120,
@@ -351,20 +499,20 @@
               after17Add: 35,
               weekendAdd: 60,
               bankHolidayAdd: 90,
-              immediateAdd: 60,          // ADDED
+              immediateAdd: 60,
               rounding: 10
             },
             return_same_day: {
               baseUpTo20: 120,
-              perMileOver20: 2.00,       // effective miles
+              perMileOver20: 2.00,
               uplift: [],
-              manualQuoteMiles: 240,     // effective miles
+              manualQuoteMiles: 240,
               urgencyMinutes: 180,
               urgencyAdd: 40,
               after17Add: 35,
               weekendAdd: 60,
               bankHolidayAdd: 90,
-              immediateAdd: 60,          // ADDED
+              immediateAdd: 60,
               rounding: 10
             }
           },
@@ -380,7 +528,7 @@
               after17Add: 35,
               weekendAdd: 60,
               bankHolidayAdd: 90,
-              immediateAdd: 60,          // ADDED
+              immediateAdd: 60,
               rounding: 10
             },
             return_same_day: {
@@ -393,7 +541,7 @@
               after17Add: 35,
               weekendAdd: 60,
               bankHolidayAdd: 90,
-              immediateAdd: 60,          // ADDED
+              immediateAdd: 60,
               rounding: 10
             }
           },
@@ -409,7 +557,7 @@
               after17Add: 35,
               weekendAdd: 60,
               bankHolidayAdd: 90,
-              immediateAdd: 60,          // ADDED
+              immediateAdd: 60,
               rounding: 10
             },
             return_same_day: {
@@ -422,7 +570,7 @@
               after17Add: 35,
               weekendAdd: 60,
               bankHolidayAdd: 90,
-              immediateAdd: 60,          // ADDED
+              immediateAdd: 60,
               rounding: 10
             }
           },
@@ -438,7 +586,7 @@
               after17Add: 35,
               weekendAdd: 60,
               bankHolidayAdd: 90,
-              immediateAdd: 60,          // ADDED
+              immediateAdd: 60,
               rounding: 10
             },
             return_same_day: {
@@ -451,12 +599,11 @@
               after17Add: 35,
               weekendAdd: 60,
               bankHolidayAdd: 90,
-              immediateAdd: 60,          // ADDED
+              immediateAdd: 60,
               rounding: 10
             }
           },
 
-          // Tier 2 – Commercial
           "Engineering": {
             oneway: {
               baseUpTo20: 120,
@@ -468,7 +615,7 @@
               after17Add: 30,
               weekendAdd: 55,
               bankHolidayAdd: 85,
-              immediateAdd: 45,          // ADDED
+              immediateAdd: 45,
               rounding: 10
             },
             return_same_day: {
@@ -481,7 +628,7 @@
               after17Add: 30,
               weekendAdd: 55,
               bankHolidayAdd: 85,
-              immediateAdd: 45,          // ADDED
+              immediateAdd: 45,
               rounding: 10
             }
           },
@@ -497,7 +644,7 @@
               after17Add: 30,
               weekendAdd: 55,
               bankHolidayAdd: 85,
-              immediateAdd: 45,          // ADDED
+              immediateAdd: 45,
               rounding: 10
             },
             return_same_day: {
@@ -510,7 +657,7 @@
               after17Add: 30,
               weekendAdd: 55,
               bankHolidayAdd: 85,
-              immediateAdd: 45,          // ADDED
+              immediateAdd: 45,
               rounding: 10
             }
           },
@@ -526,7 +673,7 @@
               after17Add: 30,
               weekendAdd: 55,
               bankHolidayAdd: 85,
-              immediateAdd: 45,          // ADDED
+              immediateAdd: 45,
               rounding: 10
             },
             return_same_day: {
@@ -539,7 +686,7 @@
               after17Add: 30,
               weekendAdd: 55,
               bankHolidayAdd: 85,
-              immediateAdd: 45,          // ADDED
+              immediateAdd: 45,
               rounding: 10
             }
           }
@@ -560,6 +707,12 @@
           return !!(el && el.checked);
         }
 
+        // ADDED
+        function getRepeatType() {
+          const checked = document.querySelector('input[name="repeatType"]:checked');
+          return checked ? checked.value : "one_off";
+        }
+
         function parseMiles(v) {
           const n = Number(String(v || "").trim());
           if (!Number.isFinite(n)) return 0;
@@ -578,6 +731,53 @@
 
         function isBankHolidayPlaceholder() {
           return false;
+        }
+
+        // ADDED
+        function isAerometBlockedDate(dateStr) {
+          if (!dateStr) return false;
+          const dt = new Date(dateStr + "T12:00:00");
+          if (Number.isNaN(dt.getTime())) return false;
+          const day = dt.getDay();
+          return day === 4 || day === 5 || day === 6; // Thu, Fri, Sat
+        }
+
+        // ADDED
+        function validateAvailability(showStatusMessage) {
+          const dateVal = getVal("whenDate");
+          const blocked = isAerometBlockedDate(dateVal);
+
+          if (availabilityWarningEl) {
+            availabilityWarningEl.style.display = blocked ? "block" : "none";
+          }
+
+          if (whenDateEl) {
+            whenDateEl.setCustomValidity(
+              blocked
+                ? "Thursday, Friday and Saturday are not available for Gilead bookings."
+                : ""
+            );
+          }
+
+          if (blocked && showStatusMessage) {
+            setStatus("Thursday, Friday and Saturday are reserved for Aeromet. Please choose Sunday to Wednesday.", "error");
+          }
+
+          return !blocked;
+        }
+
+        // ADDED
+        function syncRepeatUI() {
+          const repeatType = getRepeatType();
+          const showCustom = repeatType === "custom";
+
+          if (customRepeatWrap) {
+            customRepeatWrap.style.display = showCustom ? "block" : "none";
+          }
+
+          if (customRepeatDetailsEl) {
+            customRepeatDetailsEl.required = showCustom;
+          }
         }
 
         function getPricingProfile(industry, serviceType) {
@@ -707,7 +907,6 @@
           if (bankHoliday) total += P.bankHolidayAdd;
           else if (weekend) total += P.weekendAdd;
 
-          // ADDED: Immediate delivery premium (explicit flag)
           if (immediateDelivery) total += (P.immediateAdd || 0);
 
           total = roundToNearest(total, P.rounding);
@@ -765,9 +964,25 @@
           if (el) el.addEventListener("change", renderEstimate);
         });
 
-        renderEstimate();
+        // ADDED
+        if (whenDateEl) {
+          whenDateEl.addEventListener("input", function () {
+            validateAvailability(false);
+          });
+          whenDateEl.addEventListener("change", function () {
+            validateAvailability(true);
+          });
+        }
 
-        // show stored booking reference on success redirect
+        // ADDED
+        document.querySelectorAll('input[name="repeatType"]').forEach((el) => {
+          el.addEventListener("change", syncRepeatUI);
+        });
+
+        renderEstimate();
+        syncRepeatUI();
+        validateAvailability(false);
+
         try {
           const params = new URLSearchParams(window.location.search || "");
           const qsStatus = params.get("status");
@@ -783,6 +998,11 @@
         form.addEventListener("submit", async function (e) {
           e.preventDefault();
 
+          if (!validateAvailability(true)) {
+            submitBtn.disabled = false;
+            return;
+          }
+
           setStatus("Creating secure payment…", "");
           submitBtn.disabled = true;
 
@@ -790,7 +1010,7 @@
             company: getVal("company").trim(),
             industry: getVal("industry"),
             serviceType: getVal("serviceType"),
-            immediateDelivery: getChecked("immediateDelivery"),  // ADDED
+            immediateDelivery: getChecked("immediateDelivery"),
             pickup: getVal("pickup").trim(),
             dropoff: getVal("dropoff").trim(),
             miles: getVal("miles"),
@@ -798,12 +1018,20 @@
             poNumber: getVal("poNumber").trim(),
             whenDate: getVal("whenDate"),
             whenTime: getVal("whenTime"),
+            repeatType: getRepeatType(),                    // ADDED
+            customRepeatDetails: getVal("customRepeatDetails").trim(), // ADDED
             notes: getVal("notes").trim()
           };
 
           if (!payload.company || !payload.industry || !payload.serviceType || !payload.pickup || !payload.dropoff ||
               !payload.miles || !payload.email || !payload.whenDate || !payload.whenTime) {
             setStatus("Please complete all required fields.", "error");
+            submitBtn.disabled = false;
+            return;
+          }
+
+          if (payload.repeatType === "custom" && !payload.customRepeatDetails) {
+            setStatus("Please enter your custom repeat details.", "error");
             submitBtn.disabled = false;
             return;
           }
