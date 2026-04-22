@@ -245,71 +245,6 @@
       line-height:1.4;
     }
 
-    .industriesMenu{
-      position: relative;
-    }
-
-    .industriesToggle{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      cursor:pointer;
-      border:none;
-      background:transparent;
-      font-family:inherit;
-    }
-
-    .industriesToggle .caret{
-      font-size:11px;
-      opacity:0.9;
-      transition: transform 0.18s ease;
-    }
-
-    .industriesMenu.open .industriesToggle .caret{
-      transform: rotate(180deg);
-    }
-
-    .dropdown{
-      position:absolute;
-      top:calc(100% + 10px);
-      right:0;
-      min-width:250px;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:14px;
-      box-shadow:0 18px 34px rgba(0,0,0,0.16);
-      padding:8px;
-      display:none;
-      z-index:100;
-    }
-
-    .industriesMenu.open .dropdown{
-      display:block;
-    }
-
-    .dropdown a{
-      display:block;
-      padding:10px 12px;
-      border-radius:10px;
-      font-size:13px;
-      color:var(--ink);
-      line-height:1.35;
-    }
-
-    .dropdown a:hover{
-      background:var(--bg);
-      color:var(--navy);
-    }
-
-    .dropdownLabel{
-      padding:8px 12px 6px;
-      font-size:11px;
-      font-weight:800;
-      letter-spacing:0.7px;
-      text-transform:uppercase;
-      color:var(--muted);
-    }
-
     footer{
       padding:16px 0 28px;
       font-size:12px;
@@ -356,21 +291,6 @@
       main{ padding:12px 0; }
       .wrapFull{ padding:0 6px; }
 
-      nav{
-        width:100%;
-      }
-
-      .industriesMenu{
-        width:auto;
-      }
-
-      .dropdown{
-        position:absolute;
-        right:0;
-        left:auto;
-        min-width:250px;
-      }
-
       .footerRow{
         grid-template-columns:1fr;
         gap:10px;
@@ -398,26 +318,6 @@
       </div>
       <nav>
         <a class="navlink" href="/">Home</a>
-
-        <div class="industriesMenu" id="industriesMenu">
-          <button class="navlink industriesToggle" id="industriesToggle" type="button" aria-expanded="false" aria-controls="industriesDropdown">
-            Industries <span class="caret">▼</span>
-          </button>
-
-          <div class="dropdown" id="industriesDropdown">
-            <div class="dropdownLabel">Select industry</div>
-            <a href="/aerospace-courier.html">Aerospace</a>
-            <a href="/legal-courier.html">Legal</a>
-            <a href="/medical-courier.html">Medical</a>
-            <a href="/engineering-courier.html">Engineering</a>
-            <a href="/defence-courier.html">Defence</a>
-            <a href="/financial-services-courier.html">Financial Services</a>
-            <a href="/government-public-sector-courier.html">Government / Public Sector</a>
-            <a href="/other-industries-courier.html">Other Industries</a>
-          </div>
-        </div>
-
-        <a class="navlink" href="/book.html?industry=aerospace">Book</a>
         <a class="cta" href="/book.html?industry=aerospace">Book Aerospace Courier</a>
       </nav>
     </div>
@@ -512,44 +412,6 @@
 
 <script>
   document.getElementById("y").textContent = new Date().getFullYear();
-
-  (function () {
-    const menu = document.getElementById("industriesMenu");
-    const toggle = document.getElementById("industriesToggle");
-
-    if (!menu || !toggle) return;
-
-    function openMenu() {
-      menu.classList.add("open");
-      toggle.setAttribute("aria-expanded", "true");
-    }
-
-    function closeMenu() {
-      menu.classList.remove("open");
-      toggle.setAttribute("aria-expanded", "false");
-    }
-
-    function toggleMenu() {
-      if (menu.classList.contains("open")) closeMenu();
-      else openMenu();
-    }
-
-    toggle.addEventListener("click", function (e) {
-      e.stopPropagation();
-      toggleMenu();
-    });
-
-    menu.addEventListener("mouseenter", openMenu);
-    menu.addEventListener("mouseleave", closeMenu);
-
-    document.addEventListener("click", function (e) {
-      if (!menu.contains(e.target)) closeMenu();
-    });
-
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") closeMenu();
-    });
-  })();
 </script>
 
 </body>
