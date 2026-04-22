@@ -15,40 +15,73 @@
       --bg:#F5F7FB;
       --card:#FFFFFF;
       --line:#E5E7EB;
+      --shadow: 0 14px 32px rgba(0,0,0,0.12);
+      --radius: 14px;
     }
 
     *{ box-sizing:border-box; }
+    html,body{ margin:0; padding:0; }
+
     body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
-      background:var(--bg);
-      color:var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
     }
 
-    .wrap{ max-width:1100px; margin:0 auto; padding:0 20px; }
+    a{ text-decoration:none; color:inherit; }
+
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:0 20px;
+    }
+
+    .wrapFull{
+      width:100%;
+      margin:0 auto;
+      padding:0 8px;
+    }
 
     header{
-      background:linear-gradient(180deg,var(--navy),var(--navy-dark));
+      background: linear-gradient(180deg, var(--navy), var(--navy-dark));
       color:#fff;
-      position:relative;
-      z-index:10;
+      border-bottom:1px solid rgba(255,255,255,0.08);
     }
 
     .topbar{
       display:flex;
-      justify-content:space-between;
       align-items:center;
+      justify-content:space-between;
       padding:18px 0;
+      gap:20px;
     }
 
-    .brand{ display:flex; align-items:center; gap:14px; }
-    .brand img{ height:60px; }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+
+    .brand img{
+      height:64px;
+      width:auto;
+      display:block;
+    }
+
+    .brandText p{
+      margin:0;
+      font-size:14px;
+      font-weight:700;
+      letter-spacing:0.6px;
+      color:rgba(255,255,255,0.85);
+      text-transform:uppercase;
+    }
 
     nav{
       display:flex;
-      gap:12px;
       align-items:center;
-      position:relative;
+      gap:14px;
+      flex-wrap:wrap;
     }
 
     .navlink{
@@ -56,110 +89,215 @@
       color:rgba(255,255,255,0.85);
       padding:8px 10px;
       border-radius:10px;
-      cursor:pointer;
-      border:none;
-      background:none;
     }
 
     .navlink:hover{
       background:rgba(255,255,255,0.08);
+      color:#fff;
     }
 
     .cta{
-      background:linear-gradient(180deg,#E6C772,var(--gold));
+      background:linear-gradient(180deg, #E6C772, var(--gold));
       color:#08162C;
       font-weight:800;
       padding:10px 14px;
       border-radius:12px;
+      border:1px solid rgba(0,0,0,0.18);
+      box-shadow:0 10px 22px rgba(0,0,0,0.18);
     }
 
-    /* DROPDOWN */
-    .industriesMenu{ position:relative; }
-
-    .dropdown{
-      position:absolute;
-      top:110%;
-      right:0;
-      background:#fff;
-      border-radius:12px;
-      border:1px solid var(--line);
-      padding:8px;
-      display:none;
-      min-width:240px;
-      box-shadow:0 12px 30px rgba(0,0,0,0.18);
-    }
-
-    .industriesMenu.open .dropdown{ display:block; }
-
-    .dropdown a{
-      display:block;
-      padding:10px;
-      border-radius:8px;
-      font-size:13px;
-    }
-
-    .dropdown a:hover{
-      background:var(--bg);
-    }
-
-    /* HERO */
     .hero{
       background:
-        linear-gradient(180deg,rgba(11,31,59,0.92),rgba(11,31,59,0.65)),
+        linear-gradient(180deg, rgba(11,31,59,0.92), rgba(11,31,59,0.65)),
         url("/app/images/hero-courier.jpg");
       background-size:cover;
+      background-position:center;
       color:#fff;
-      padding:60px 0;
+      padding:62px 0 56px;
+    }
+
+    .heroInner{
+      display:grid;
+      grid-template-columns:1.3fr 0.7fr;
+      gap:24px;
+      align-items:end;
     }
 
     .hero h2{
-      font-size:42px;
       margin:0 0 12px;
+      font-size:44px;
+      line-height:1.05;
+      letter-spacing:-0.02em;
+      max-width:13ch;
     }
 
     .hero p{
-      max-width:600px;
+      margin:0 0 18px;
+      font-size:16px;
+      color:rgba(255,255,255,0.9);
       line-height:1.6;
+      max-width:60ch;
+    }
+
+    .heroActions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      align-items:center;
     }
 
     .btnPrimary{
-      display:inline-block;
-      margin-top:16px;
-      background:linear-gradient(180deg,#E6C772,var(--gold));
+      background:linear-gradient(180deg, #E6C772, var(--gold));
       color:#08162C;
+      font-weight:900;
+      padding:14px 20px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,0.18);
+      display:inline-block;
+    }
+
+    .btnGhost{
+      background:rgba(255,255,255,0.12);
+      color:#fff;
+      font-weight:700;
       padding:14px 18px;
       border-radius:12px;
-      font-weight:800;
+      border:1px solid rgba(255,255,255,0.25);
+      display:inline-block;
     }
 
-    main{ padding:20px 0; }
-
-    .grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
+    .reassure{
+      margin-top:8px;
+      font-size:12px;
+      color:rgba(255,255,255,0.82);
+      letter-spacing:0.2px;
     }
+
+    main{ padding:14px 0; }
 
     .panel{
-      background:#fff;
-      padding:12px;
-      border-radius:12px;
+      background: var(--card);
       border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.06);
+      padding:10px 12px;
     }
 
-    .title{
+    .muted{
+      color:var(--muted);
+      line-height:1.55;
+      margin:0;
       font-size:14px;
-      font-weight:900;
-      color:var(--navy);
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      width:100%;
+    }
+
+    .inlineTitle{
+      font-size:14px;
+      letter-spacing:0.6px;
       text-transform:uppercase;
-      margin-bottom:6px;
+      color:var(--navy);
+      font-weight:900;
+      margin:0 0 6px;
+    }
+
+    .inlineTitle span{
+      font-weight:400;
+      text-transform:none;
+      letter-spacing:0;
+      color:var(--muted);
+      margin-left:6px;
+    }
+
+    .howSteps{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:8px;
+      margin-top:8px;
+    }
+
+    .step{
+      border:1px solid var(--line);
+      border-radius: 12px;
+      padding:8px 8px;
+      background:#fff;
+    }
+
+    .step strong{
+      display:block;
+      margin:0 0 4px;
+      color:var(--navy);
+      font-size:13px;
+    }
+
+    .step span{
+      display:block;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
     }
 
     footer{
-      padding:20px;
-      text-align:center;
+      padding:16px 0 28px;
       font-size:12px;
       color:var(--muted);
+    }
+
+    .footerRow{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items:center;
+      max-width:1100px;
+      margin:0 auto;
+      padding:0 20px;
+    }
+
+    .footerLeft{
+      justify-self:start;
+    }
+
+    .footerCenter{
+      justify-self:center;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .footerCenter a{
+      color:var(--muted);
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+
+    .footerCenter a:hover{
+      color:var(--navy);
+    }
+
+    @media(max-width:900px){
+      .heroInner{ grid-template-columns:1fr; }
+      .hero h2{ font-size:36px; max-width:100%; }
+      .brand img{ height:54px; }
+      .grid2{ grid-template-columns:1fr; }
+      .howSteps{ grid-template-columns:1fr; }
+      main{ padding:12px 0; }
+      .wrapFull{ padding:0 6px; }
+
+      .footerRow{
+        grid-template-columns:1fr;
+        gap:10px;
+        text-align:center;
+      }
+
+      .footerLeft,
+      .footerCenter{
+        justify-self:center;
+      }
     }
   </style>
 </head>
@@ -170,25 +308,14 @@
   <div class="wrap">
     <div class="topbar">
       <div class="brand">
-        <img src="/app/images/gilead-logo.png">
-      </div>
-
-      <nav>
-        <div class="industriesMenu" id="menu">
-          <button class="navlink" onclick="toggleMenu()">Industries ▼</button>
-
-          <div class="dropdown">
-            <a href="/aerospace-courier.html">Aerospace</a>
-            <a href="/legal-courier.html">Legal</a>
-            <a href="/medical-courier.html">Medical</a>
-            <a href="/engineering-courier.html">Engineering</a>
-            <a href="/defence-courier.html">Defence</a>
-            <a href="/financial-services-courier.html">Financial Services</a>
-            <a href="/government-public-sector-courier.html">Public Sector</a>
-            <a href="/other-industries-courier.html">Other</a>
-          </div>
+        <img src="/app/images/gilead-logo.png" alt="Gilead Couriers logo" />
+        <div class="brandText">
+          <p>Discreet. Reliable. Elite.</p>
         </div>
-
+      </div>
+      <nav>
+        <a class="navlink" href="/">Home</a>
+        <a class="navlink" href="/book.html?industry=aerospace">Book</a>
         <a class="cta" href="/book.html?industry=aerospace">Book Aerospace Courier</a>
       </nav>
     </div>
@@ -197,30 +324,68 @@
 
 <section class="hero">
   <div class="wrap">
-    <h2>Aerospace courier for mission-critical components.</h2>
-    <p>
-      Direct A-to-B delivery for aerospace parts, precision-engineered components
-      and urgent supply chain movements where delays are not acceptable.
-    </p>
+    <div class="heroInner">
+      <div>
+        <h2>Aerospace courier for time-critical components.</h2>
+        <p>
+          Direct A-to-B delivery for urgent, high-value and precision-engineered parts where delay, mishandling or handoffs create unnecessary operational risk.
+        </p>
 
-    <a class="btnPrimary" href="/book.html?industry=aerospace">Book Aerospace Courier</a>
+        <div class="heroActions">
+          <a class="btnPrimary" href="/book.html?industry=aerospace">Book Aerospace Courier</a>
+          <a class="btnGhost" href="/book.html?industry=aerospace">Get Instant Price</a>
+        </div>
+
+        <div class="reassure">Direct A-to-B only. No subcontracting. Aerospace pre-selected in booking.</div>
+      </div>
+    </div>
   </div>
 </section>
 
 <main>
-  <div class="wrap">
-    <div class="grid">
+  <div class="wrapFull">
+    <div class="grid2">
 
       <div class="panel">
-        <div class="title">Why aerospace clients use Gilead</div>
-        Controlled handling, direct delivery and zero subcontracting ensure
-        high-value and sensitive aerospace consignments arrive exactly as required.
+        <div class="inlineTitle">
+          Why aerospace teams use Gilead
+          <span>Built for controlled, high-trust deliveries</span>
+        </div>
+        <p class="muted">
+          Gilead is designed for critical deliveries where timing, handling and accountability matter more than generic courier volume. One accountable operator handles the run directly from collection to delivery, reducing touchpoints and keeping control tighter throughout.
+        </p>
       </div>
 
       <div class="panel">
-        <div class="title">Typical use cases</div>
-        Urgent part delivery, AOG support, manufacturing transfers and
-        high-value engineering components.
+        <div class="inlineTitle">
+          Typical use cases
+          <span>For urgent and operationally important movements</span>
+        </div>
+        <p class="muted">
+          Urgent part delivery to prevent production downtime, site-to-site transfer of priority components or tooling, and evening or weekend recovery runs when a standard courier model is not good enough.
+        </p>
+      </div>
+
+      <div class="panel" style="grid-column:1 / -1;">
+        <div class="inlineTitle">
+          How it works
+          <span>A simple, controlled booking process for aerospace jobs.</span>
+        </div>
+
+        <div class="howSteps">
+          <div class="step">
+            <strong>1) Price</strong>
+            <span>Open the booking form with Aerospace already selected and confirm the delivery details.</span>
+          </div>
+          <div class="step">
+            <strong>2) Book</strong>
+            <span>Secure the job through the existing checkout flow using your current booking system.</span>
+          </div>
+          <div class="step">
+            <strong>3) Deliver</strong>
+            <span>Your live workflow handles the job from payment through to dispatch and direct delivery.</span>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -228,15 +393,23 @@
 </main>
 
 <footer>
-  © <span id="y"></span> Gilead Couriers
+  <div class="footerRow">
+    <div class="footerLeft">© <span id="y"></span> Gilead Couriers</div>
+
+    <div class="footerCenter">
+      <a href="/terms.html">Terms</a>
+      <span>·</span>
+      <a href="/refund-policy.html">Refund Policy</a>
+      <span>·</span>
+      <a href="/privacy-policy.html">Privacy Policy</a>
+    </div>
+
+    <div></div>
+  </div>
 </footer>
 
 <script>
-function toggleMenu(){
-  document.getElementById("menu").classList.toggle("open");
-}
-
-document.getElementById("y").textContent = new Date().getFullYear();
+  document.getElementById("y").textContent = new Date().getFullYear();
 </script>
 
 </body>
