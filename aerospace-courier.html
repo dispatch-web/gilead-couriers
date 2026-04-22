@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Gilead Couriers | Aerospace Courier for Time-Critical Components</title>
+    <meta
+      name="description"
+      content="Direct, no-handoff aerospace courier service for time-critical, high-value and precision-engineered components. Book instantly with Gilead Couriers."
+    />
+    <style>
+      :root {
+        --bg: #07162b;
+        --bg-deep: #04101f;
+        --panel: rgba(255,255,255,0.08);
+        --panel-strong: rgba(255,255,255,0.12);
+        --text: #f6f8fb;
+        --muted: #c4ceda;
+        --line: rgba(255,255,255,0.12);
+        --gold: #d6b25e;
+        --gold-2: #f1d78a;
+        --shadow: 0 20px 50px rgba(0,0,0,0.28);
+        --radius: 20px;
+        --max: 1180px;
+      }
+
+      * { box-sizing: border-box; }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: var(--text);
+        background:
+          linear-gradient(180deg, rgba(4,16,31,0.82), rgba(4,16,31,0.94)),
+          radial-gradient(circle at top right, rgba(214,178,94,0.16), transparent 28%),
+          radial-gradient(circle at left center, rgba(49,84,128,0.24), transparent 25%),
+          linear-gradient(180deg, #0a1d35 0%, #061221 100%);
+        line-height: 1.55;
+      }
+
+      a { color: inherit; text-decoration: none; }
+
+      img { max-width: 100%; display: block; }
+
+      .container {
+        width: min(calc(100% - 32px), var(--max));
+        margin: 0 auto;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        backdrop-filter: blur(12px);
+        background: rgba(4, 16, 31, 0.72);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+      }
+
+      .topbar-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        min-height: 76px;
+      }
+
+      .brand-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .brand {
+        font-size: 1.05rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .tag {
+        font-size: 0.8rem;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-height: 48px;
+        padding: 0 20px;
+        border-radius: 999px;
+        font-weight: 700;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        border: 1px solid transparent;
+        cursor: pointer;
+      }
+
+      .btn:hover { transform: translateY(-1px); }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--gold), var(--gold-2));
+        color: #08111d;
+        box-shadow: 0 12px 28px rgba(214,178,94,0.24);
+      }
+
+      .btn-secondary {
+        background: rgba(255,255,255,0.06);
+        color: var(--text);
+        border-color: rgba(255,255,255,0.16);
+      }
+
+      .hero {
+        padding: 84px 0 56px;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 32px;
+        align-items: stretch;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(214,178,94,0.12);
+        border: 1px solid rgba(214,178,94,0.24);
+        color: var(--gold-2);
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 18px;
+      }
+
+      h1, h2, h3 {
+        margin: 0 0 14px;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+      }
+
+      h1 {
+        font-size: clamp(2.4rem, 5vw, 4.4rem);
+        max-width: 12ch;
+      }
+
+      h2 {
+        font-size: clamp(1.7rem, 3vw, 2.6rem);
+      }
+
+      h3 {
+        font-size: 1.15rem;
+      }
+
+      p {
+        margin: 0 0 16px;
+        color: var(--muted);
+        font-size: 1.02rem;
+      }
+
+      .lead {
+        font-size: 1.16rem;
+        max-width: 64ch;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin: 28px 0 30px;
+      }
+
+      .feature-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 12px;
+      }
+
+      .feature-item {
+        padding: 16px 18px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      .hero-card,
+      .panel {
+        background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.05));
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+
+      .hero-card {
+        padding: 28px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 100%;
+      }
+
+      .hero-card .kicker {
+        color: var(--gold-2);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.8rem;
+        margin-bottom: 14px;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin: 22px 0 10px;
+      }
+
+      .metric {
+        padding: 18px;
+        border-radius: 16px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+
+      .metric strong {
+        display: block;
+        font-size: 1.45rem;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+
+      .metric span {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .signal {
+        margin-top: 12px;
+        padding: 16px 18px;
+        border-radius: 16px;
+        background: rgba(214,178,94,0.08);
+        border: 1px solid rgba(214,178,94,0.2);
+        color: #f4e7bf;
+      }
+
+      section {
+        padding: 34px 0;
+      }
+
+      .section-head {
+        max-width: 760px;
+        margin-bottom: 28px;
+      }
+
+      .grid-2,
+      .grid-3,
+      .grid-4 {
+        display: grid;
+        gap: 18px;
+      }
+
+      .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+      .card {
+        padding: 24px;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+
+      .card p:last-child,
+      .panel p:last-child { margin-bottom: 0; }
+
+      .card-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(214,178,94,0.14);
+        color: var(--gold-2);
+        font-weight: 800;
+        margin-bottom: 16px;
+      }
+
+      .problem .card {
+        background: rgba(255,255,255,0.04);
+      }
+
+      .split-panel {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+        align-items: stretch;
+      }
+
+      .panel {
+        padding: 28px;
+      }
+
+      .checklist {
+        display: grid;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .check {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        color: var(--text);
+      }
+
+      .check i {
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        background: rgba(214,178,94,0.16);
+        color: var(--gold-2);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-style: normal;
+        font-weight: 800;
+        flex: 0 0 24px;
+        margin-top: 1px;
+      }
+
+      .use-cases .card,
+      .trust .card,
+      .how-it-works .card {
+        min-height: 100%;
+      }
+
+      .steps {
+        counter-reset: step;
+      }
+
+      .step {
+        position: relative;
+        padding-top: 58px;
+      }
+
+      .step::before {
+        counter-increment: step;
+        content: counter(step);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--gold), var(--gold-2));
+        color: #08111d;
+      }
+
+      .cta-band {
+        padding: 34px;
+        border-radius: 24px;
+        background:
+          linear-gradient(180deg, rgba(214,178,94,0.12), rgba(214,178,94,0.06)),
+          rgba(255,255,255,0.04);
+        border: 1px solid rgba(214,178,94,0.18);
+        box-shadow: var(--shadow);
+      }
+
+      .cta-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 22px;
+      }
+
+      .micro-note {
+        font-size: 0.92rem;
+        color: var(--muted);
+        margin-top: 14px;
+      }
+
+      footer {
+        padding: 24px 0 42px;
+        color: var(--muted);
+        font-size: 0.94rem;
+      }
+
+      .footer-box {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255,255,255,0.08);
+      }
+
+      @media (max-width: 980px) {
+        .hero-grid,
+        .split-panel,
+        .grid-4 {
+          grid-template-columns: 1fr;
+        }
+
+        .grid-3,
+        .grid-2,
+        .feature-list,
+        .metrics {
+          grid-template-columns: 1fr;
+        }
+
+        h1 { max-width: 100%; }
+      }
+
+      @media (max-width: 720px) {
+        .topbar-inner {
+          align-items: flex-start;
+          flex-direction: column;
+          padding: 14px 0;
+        }
+
+        .nav-actions,
+        .hero-actions,
+        .cta-actions {
+          width: 100%;
+          flex-direction: column;
+        }
+
+        .nav-actions .btn,
+        .hero-actions .btn,
+        .cta-actions .btn {
+          width: 100%;
+        }
+
+        .hero,
+        section { padding: 26px 0; }
+
+        .hero-card,
+        .panel,
+        .card,
+        .cta-band { padding: 22px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container topbar-inner">
+        <div class="brand-wrap">
+          <a href="/" class="brand">Gilead Couriers</a>
+          <div class="tag">Discreet. Reliable. Elite.</div>
+        </div>
+        <div class="nav-actions">
+          <a class="btn btn-secondary" href="/book.html?industry=aerospace">Get Instant Price</a>
+          <a class="btn btn-primary" href="/book.html?industry=aerospace">Book Immediate Collection</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero-grid">
+          <div>
+            <div class="eyebrow">Aerospace Courier Service</div>
+            <h1>Aerospace courier for time-critical components</h1>
+            <p class="lead">
+              Direct, no-handoff delivery of high-value and mission-critical parts — collected and delivered by a dedicated driver you can rely on.
+            </p>
+
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="/book.html?industry=aerospace">Book Immediate Collection</a>
+              <a class="btn btn-secondary" href="/book.html?industry=aerospace">Get Instant Price</a>
+            </div>
+
+            <div class="feature-list">
+              <div class="feature-item">No network handoffs — one driver, full accountability</div>
+              <div class="feature-item">Precision handling for sensitive components</div>
+              <div class="feature-item">Rapid response for urgent production requirements</div>
+              <div class="feature-item">Built for high-value, time-critical deliveries</div>
+            </div>
+          </div>
+
+          <aside class="hero-card" aria-label="Aerospace courier summary">
+            <div>
+              <div class="kicker">Why aerospace teams choose Gilead</div>
+              <h3>Specialist delivery when failure is not an option</h3>
+              <p>
+                For urgent components, late-stage recoveries and direct transfers between sites, Gilead provides controlled, accountable delivery without the risk of depot handling or multi-driver networks.
+              </p>
+            </div>
+
+            <div class="metrics">
+              <div class="metric">
+                <strong>Direct</strong>
+                <span>Collected and delivered without handoffs</span>
+              </div>
+              <div class="metric">
+                <strong>Premium</strong>
+                <span>Designed for high-trust, high-value work</span>
+              </div>
+              <div class="metric">
+                <strong>Fast</strong>
+                <span>Built for urgent operational response</span>
+              </div>
+              <div class="metric">
+                <strong>Clear</strong>
+                <span>Instant online pricing and booking</span>
+              </div>
+            </div>
+
+            <div class="signal">
+              When a part does not arrive, production does not wait. Gilead is built for exactly that moment.
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="problem">
+        <div class="container">
+          <div class="section-head">
+            <h2>When a component does not arrive, production stops</h2>
+            <p>
+              In aerospace and precision engineering environments, delay is not a minor inconvenience. It creates downtime, disrupts build schedules, increases cost and introduces avoidable risk.
+            </p>
+          </div>
+
+          <div class="grid-4">
+            <div class="card">
+              <div class="card-icon">01</div>
+              <h3>Missed deliveries delay builds</h3>
+              <p>Critical parts arriving late can hold up assembly, testing, inspection and dispatch.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">02</div>
+              <h3>Incorrect handling damages value</h3>
+              <p>Sensitive, precision-machined and high-value components should not be treated as generic freight.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">03</div>
+              <h3>Network handoffs increase risk</h3>
+              <p>Multiple transfer points create avoidable exposure, delay and loss of accountability.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">04</div>
+              <h3>Poor communication creates uncertainty</h3>
+              <p>When timing matters, operations teams need clarity, not vague updates and call chasing.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="container split-panel">
+          <div class="panel">
+            <div class="section-head" style="margin-bottom: 0;">
+              <h2>A different approach to critical deliveries</h2>
+              <p>
+                Gilead is not a courier network. Every job is handled directly, from collection to delivery, by a single accountable driver. That means fewer touchpoints, tighter control and a clearer chain of responsibility.
+              </p>
+            </div>
+
+            <div class="checklist">
+              <div class="check"><i>✓</i><div><strong>Direct delivery</strong><br />No transfers, depots or unnecessary handling stages.</div></div>
+              <div class="check"><i>✓</i><div><strong>Full accountability</strong><br />One driver responsible end-to-end from collection to drop-off.</div></div>
+              <div class="check"><i>✓</i><div><strong>Controlled handling</strong><br />Suitable for precision components, sensitive items and operationally important consignments.</div></div>
+              <div class="check"><i>✓</i><div><strong>Time-critical focus</strong><br />Built for urgent production requirements and supply chain recovery runs.</div></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>What this means in practice</h3>
+            <p>
+              You are not buying generic transport. You are securing a dedicated, premium courier response for operationally important deliveries where timing, handling and accountability matter.
+            </p>
+            <p>
+              That is why Gilead is positioned for clients who would rather pay properly once than absorb the hidden cost of delay, damage or failed delivery.
+            </p>
+            <div class="hero-actions" style="margin-bottom:0;">
+              <a class="btn btn-primary" href="/book.html?industry=aerospace">Get Instant Price</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="use-cases">
+        <div class="container">
+          <div class="section-head">
+            <h2>Designed for real operational scenarios</h2>
+            <p>
+              This service is built for the kinds of jobs where a standard courier model is simply not good enough.
+            </p>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h3>Urgent part delivery to prevent production downtime</h3>
+              <p>When a missing component threatens output, you need a direct response that gets the part where it needs to be without delay.</p>
+            </div>
+            <div class="card">
+              <h3>Time-critical transfer between sites</h3>
+              <p>Move components, tooling or priority items between facilities with a single point of responsibility throughout the run.</p>
+            </div>
+            <div class="card">
+              <h3>Late-stage supply chain recovery</h3>
+              <p>Recover schedule pressure with a premium same-day solution when conventional transport has already become the bottleneck.</p>
+            </div>
+            <div class="card">
+              <h3>Weekend or out-of-hours emergency runs</h3>
+              <p>When the need is urgent and the clock is working against you, Gilead is structured for high-value, time-sensitive support.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="trust">
+        <div class="container">
+          <div class="section-head">
+            <h2>Built for high-trust environments</h2>
+            <p>
+              Aerospace and engineering teams do not need theatrics. They need dependable execution, clear communication and a courier partner who understands the consequence of failure.
+            </p>
+          </div>
+
+          <div class="grid-3">
+            <div class="card">
+              <h3>Regulated-sector mindset</h3>
+              <p>Positioned for sectors where timing, discipline and controlled handling are commercially important.</p>
+            </div>
+            <div class="card">
+              <h3>Direct communication</h3>
+              <p>Clear updates and a single accountable operator throughout collection, transit and delivery.</p>
+            </div>
+            <div class="card">
+              <h3>Premium service standard</h3>
+              <p>Designed for clients who prioritise reliability, discretion and control over low-cost volume transport.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="how-it-works">
+        <div class="container">
+          <div class="section-head">
+            <h2>Simple to book. Built to perform.</h2>
+            <p>
+              The front-end is straightforward. The back-end is already engineered for speed and execution.
+            </p>
+          </div>
+
+          <div class="grid-3 steps">
+            <div class="card step">
+              <h3>Get an instant price</h3>
+              <p>Open the booking form, confirm the delivery details and receive transparent pricing online.</p>
+            </div>
+            <div class="card step">
+              <h3>Book and pay securely</h3>
+              <p>Complete the booking through the existing checkout flow and lock in the collection.</p>
+            </div>
+            <div class="card step">
+              <h3>Execution begins immediately</h3>
+              <p>Your booking moves straight into the live operational workflow for dispatch and delivery handling.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="container">
+          <div class="cta-band">
+            <h2>Transparent, premium pricing — no hidden costs</h2>
+            <p>
+              Gilead offers instant pricing for aerospace deliveries through the same booking engine already powering the wider site. The service is priced for reliability, accountability and controlled execution.
+            </p>
+            <div class="cta-actions">
+              <a class="btn btn-primary" href="/book.html?industry=aerospace">Get Instant Price &amp; Book Now</a>
+              <a class="btn btn-secondary" href="/book.html?industry=aerospace">Book Immediate Collection</a>
+            </div>
+            <div class="micro-note">
+              Aerospace jobs from this page pass directly into your current booking flow using the pre-selected industry parameter.
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container footer-box">
+        <div>
+          <strong>Gilead Couriers</strong><br />
+          Premium direct-delivery courier service for time-critical, high-value jobs.
+        </div>
+        <div>
+          Aerospace landing page linked to existing booking and automation workflow.
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
