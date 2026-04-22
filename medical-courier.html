@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gilead Couriers | Medical Courier</title>
+
+  <style>
+    :root{
+      --navy:#0B1F3B;
+      --navy-dark:#08162C;
+      --gold:#C9A24D;
+      --ink:#111827;
+      --muted:#6B7280;
+      --bg:#F5F7FB;
+      --card:#FFFFFF;
+      --line:#E5E7EB;
+      --shadow: 0 14px 32px rgba(0,0,0,0.12);
+      --radius: 14px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; padding:0; }
+
+    body{
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    a{ text-decoration:none; color:inherit; }
+
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:0 20px;
+    }
+
+    .wrapFull{
+      width:100%;
+      margin:0 auto;
+      padding:0 8px;
+    }
+
+    header{
+      background: linear-gradient(180deg, var(--navy), var(--navy-dark));
+      color:#fff;
+      border-bottom:1px solid rgba(255,255,255,0.08);
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:18px 0;
+      gap:20px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+
+    .brand img{
+      height:64px;
+      width:auto;
+      display:block;
+    }
+
+    .brandText p{
+      margin:0;
+      font-size:14px;
+      font-weight:700;
+      letter-spacing:0.6px;
+      color:rgba(255,255,255,0.85);
+      text-transform:uppercase;
+    }
+
+    nav{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .navlink{
+      font-size:13px;
+      color:rgba(255,255,255,0.85);
+      padding:8px 10px;
+      border-radius:10px;
+    }
+
+    .navlink:hover{
+      background:rgba(255,255,255,0.08);
+      color:#fff;
+    }
+
+    .cta{
+      background:linear-gradient(180deg, #E6C772, var(--gold));
+      color:#08162C;
+      font-weight:800;
+      padding:10px 14px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,0.18);
+      box-shadow:0 10px 22px rgba(0,0,0,0.18);
+    }
+
+    .hero{
+      background:
+        linear-gradient(180deg, rgba(11,31,59,0.92), rgba(11,31,59,0.65)),
+        url("/app/images/hero-courier.jpg");
+      background-size:cover;
+      background-position:center;
+      color:#fff;
+      padding:62px 0 56px;
+    }
+
+    .heroInner{
+      display:grid;
+      grid-template-columns:1.3fr 0.7fr;
+      gap:24px;
+      align-items:end;
+    }
+
+    .hero h2{
+      margin:0 0 12px;
+      font-size:44px;
+      line-height:1.05;
+      letter-spacing:-0.02em;
+      max-width:13ch;
+    }
+
+    .hero p{
+      margin:0 0 18px;
+      font-size:16px;
+      color:rgba(255,255,255,0.9);
+      line-height:1.6;
+      max-width:60ch;
+    }
+
+    .heroActions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .btnPrimary{
+      background:linear-gradient(180deg, #E6C772, var(--gold));
+      color:#08162C;
+      font-weight:900;
+      padding:14px 20px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,0.18);
+      display:inline-block;
+    }
+
+    .btnGhost{
+      background:rgba(255,255,255,0.12);
+      color:#fff;
+      font-weight:700;
+      padding:14px 18px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.25);
+      display:inline-block;
+    }
+
+    .reassure{
+      margin-top:8px;
+      font-size:12px;
+      color:rgba(255,255,255,0.82);
+      letter-spacing:0.2px;
+    }
+
+    main{ padding:14px 0; }
+
+    .panel{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.06);
+      padding:10px 12px;
+    }
+
+    .muted{
+      color:var(--muted);
+      line-height:1.55;
+      margin:0;
+      font-size:14px;
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      width:100%;
+    }
+
+    .inlineTitle{
+      font-size:14px;
+      letter-spacing:0.6px;
+      text-transform:uppercase;
+      color:var(--navy);
+      font-weight:900;
+      margin:0 0 6px;
+    }
+
+    .inlineTitle span{
+      font-weight:400;
+      text-transform:none;
+      letter-spacing:0;
+      color:var(--muted);
+      margin-left:6px;
+    }
+
+    .howSteps{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:8px;
+      margin-top:8px;
+    }
+
+    .step{
+      border:1px solid var(--line);
+      border-radius: 12px;
+      padding:8px 8px;
+      background:#fff;
+    }
+
+    .step strong{
+      display:block;
+      margin:0 0 4px;
+      color:var(--navy);
+      font-size:13px;
+    }
+
+    .step span{
+      display:block;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    footer{
+      padding:16px 0 28px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .footerRow{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items:center;
+      max-width:1100px;
+      margin:0 auto;
+      padding:0 20px;
+    }
+
+    .footerLeft{
+      justify-self:start;
+    }
+
+    .footerCenter{
+      justify-self:center;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .footerCenter a{
+      color:var(--muted);
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+
+    .footerCenter a:hover{
+      color:var(--navy);
+    }
+
+    @media(max-width:900px){
+      .heroInner{ grid-template-columns:1fr; }
+      .hero h2{ font-size:36px; max-width:100%; }
+      .brand img{ height:54px; }
+      .grid2{ grid-template-columns:1fr; }
+      .howSteps{ grid-template-columns:1fr; }
+      main{ padding:12px 0; }
+      .wrapFull{ padding:0 6px; }
+
+      .topbar{
+        align-items:flex-start;
+        flex-direction:column;
+      }
+
+      nav{
+        width:100%;
+        align-items:stretch;
+        flex-direction:column;
+        gap:8px;
+      }
+
+      .navlink,
+      .cta{
+        width:100%;
+      }
+
+      .footerRow{
+        grid-template-columns:1fr;
+        gap:10px;
+        text-align:center;
+      }
+
+      .footerLeft,
+      .footerCenter{
+        justify-self:center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <img src="/app/images/gilead-logo.png" alt="Gilead Couriers logo" />
+        <div class="brandText">
+          <p>Discreet. Reliable. Elite.</p>
+        </div>
+      </div>
+      <nav>
+        <a class="navlink" href="/">Home</a>
+        <a class="navlink" href="/book.html?industry=medical">Book</a>
+        <a class="cta" href="/book.html?industry=medical">Book Medical Courier</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="heroInner">
+      <div>
+        <h2>Medical courier for urgent and sensitive consignments.</h2>
+        <p>
+          Direct A-to-B delivery for medical supplies, sensitive materials and time-critical consignments where speed, care, discretion and accountability matter more than generic courier volume.
+        </p>
+
+        <div class="heroActions">
+          <a class="btnPrimary" href="/book.html?industry=medical">Book Medical Courier</a>
+          <a class="btnGhost" href="/book.html?industry=medical">Get Instant Price</a>
+        </div>
+
+        <div class="reassure">Direct A-to-B only. No subcontracting. Medical pre-selected in booking.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="wrapFull">
+    <div class="grid2">
+
+      <div class="panel">
+        <div class="inlineTitle">
+          Why medical clients use Gilead
+          <span>Built for urgent and controlled delivery work</span>
+        </div>
+        <p class="muted">
+          Gilead is designed for medical-related deliveries where reliability, timing and careful handling are essential. One accountable operator manages the movement directly from collection to delivery, reducing handoffs and helping keep the process controlled throughout the run.
+        </p>
+      </div>
+
+      <div class="panel">
+        <div class="inlineTitle">
+          Typical use cases
+          <span>For urgent and sensitive medical movements</span>
+        </div>
+        <p class="muted">
+          Medical supplies, priority replacements, sensitive consignments, urgent site-to-site transfers and time-critical delivery requirements where a standard network courier model is not the right fit.
+        </p>
+      </div>
+
+      <div class="panel" style="grid-column:1 / -1;">
+        <div class="inlineTitle">
+          How it works
+          <span>A simple, controlled booking process for medical jobs.</span>
+        </div>
+
+        <div class="howSteps">
+          <div class="step">
+            <strong>1) Price</strong>
+            <span>Open the booking form with Medical already selected and confirm the delivery details.</span>
+          </div>
+          <div class="step">
+            <strong>2) Book</strong>
+            <span>Secure the job through the existing checkout flow using your current booking system.</span>
+          </div>
+          <div class="step">
+            <strong>3) Deliver</strong>
+            <span>Your live workflow handles the job from payment through to dispatch and direct delivery.</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="footerRow">
+    <div class="footerLeft">© <span id="y"></span> Gilead Couriers</div>
+
+    <div class="footerCenter">
+      <a href="/terms.html">Terms</a>
+      <span>·</span>
+      <a href="/refund-policy.html">Refund Policy</a>
+      <span>·</span>
+      <a href="/privacy-policy.html">Privacy Policy</a>
+    </div>
+
+    <div></div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById("y").textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>
