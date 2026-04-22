@@ -414,8 +414,6 @@
       </div>
 
       <nav>
-        <a class="navlink" href="/">Home</a>
-
         <div class="industriesMenu" id="industriesMenu">
           <button class="navlink industriesToggle" id="industriesToggle" type="button" aria-expanded="false" aria-controls="industriesDropdown">
             Industries <span class="caret">▼</span>
@@ -434,7 +432,6 @@
           </div>
         </div>
 
-        <a class="navlink" href="/book.html">Book</a>
         <a class="cta" href="/book.html">Book a Courier</a>
       </nav>
     </div>
@@ -552,15 +549,11 @@
     menu.addEventListener("mouseleave", closeMenu);
 
     document.addEventListener("click", function (e) {
-      if (!menu.contains(e.target)) {
-        closeMenu();
-      }
+      if (!menu.contains(e.target)) closeMenu();
     });
 
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") {
-        closeMenu();
-      }
+      if (e.key === "Escape") closeMenu();
     });
   })();
 </script>
