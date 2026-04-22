@@ -12,20 +12,19 @@
       :root {
         --bg: #07162b;
         --bg-deep: #04101f;
-        --panel: rgba(255,255,255,0.08);
-        --panel-strong: rgba(255,255,255,0.12);
+        --panel: rgba(255,255,255,0.07);
+        --panel-strong: rgba(255,255,255,0.1);
         --text: #f6f8fb;
         --muted: #c4ceda;
-        --line: rgba(255,255,255,0.12);
+        --line: rgba(255,255,255,0.1);
         --gold: #d6b25e;
         --gold-2: #f1d78a;
-        --shadow: 0 20px 50px rgba(0,0,0,0.28);
-        --radius: 20px;
+        --shadow: 0 18px 42px rgba(0,0,0,0.24);
+        --radius: 18px;
         --max: 1180px;
       }
 
       * { box-sizing: border-box; }
-
       html { scroll-behavior: smooth; }
 
       body {
@@ -33,15 +32,14 @@
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         color: var(--text);
         background:
-          linear-gradient(180deg, rgba(4,16,31,0.82), rgba(4,16,31,0.94)),
+          linear-gradient(180deg, rgba(4,16,31,0.84), rgba(4,16,31,0.95)),
           radial-gradient(circle at top right, rgba(214,178,94,0.16), transparent 28%),
-          radial-gradient(circle at left center, rgba(49,84,128,0.24), transparent 25%),
+          radial-gradient(circle at left center, rgba(49,84,128,0.20), transparent 24%),
           linear-gradient(180deg, #0a1d35 0%, #061221 100%);
-        line-height: 1.55;
+        line-height: 1.45;
       }
 
       a { color: inherit; text-decoration: none; }
-
       img { max-width: 100%; display: block; }
 
       .container {
@@ -54,7 +52,7 @@
         top: 0;
         z-index: 20;
         backdrop-filter: blur(12px);
-        background: rgba(4, 16, 31, 0.72);
+        background: rgba(4, 16, 31, 0.78);
         border-bottom: 1px solid rgba(255,255,255,0.08);
       }
 
@@ -63,7 +61,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 16px;
-        min-height: 76px;
+        min-height: 70px;
       }
 
       .brand-wrap {
@@ -73,14 +71,14 @@
       }
 
       .brand {
-        font-size: 1.05rem;
+        font-size: 1rem;
         font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
       }
 
       .tag {
-        font-size: 0.8rem;
+        font-size: 0.76rem;
         color: var(--muted);
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -89,7 +87,7 @@
       .nav-actions {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
       }
 
       .btn {
@@ -97,10 +95,11 @@
         align-items: center;
         justify-content: center;
         gap: 10px;
-        min-height: 48px;
-        padding: 0 20px;
+        min-height: 44px;
+        padding: 0 18px;
         border-radius: 999px;
         font-weight: 700;
+        font-size: 0.96rem;
         transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
         border: 1px solid transparent;
         cursor: pointer;
@@ -111,23 +110,23 @@
       .btn-primary {
         background: linear-gradient(135deg, var(--gold), var(--gold-2));
         color: #08111d;
-        box-shadow: 0 12px 28px rgba(214,178,94,0.24);
+        box-shadow: 0 10px 24px rgba(214,178,94,0.22);
       }
 
       .btn-secondary {
-        background: rgba(255,255,255,0.06);
+        background: rgba(255,255,255,0.05);
         color: var(--text);
-        border-color: rgba(255,255,255,0.16);
+        border-color: rgba(255,255,255,0.14);
       }
 
       .hero {
-        padding: 84px 0 56px;
+        padding: 56px 0 24px;
       }
 
       .hero-grid {
         display: grid;
-        grid-template-columns: 1.2fr 0.8fr;
-        gap: 32px;
+        grid-template-columns: 1.35fr 0.85fr;
+        gap: 22px;
         align-items: stretch;
       }
 
@@ -135,81 +134,81 @@
         display: inline-flex;
         align-items: center;
         gap: 10px;
-        padding: 8px 14px;
+        padding: 7px 12px;
         border-radius: 999px;
         background: rgba(214,178,94,0.12);
-        border: 1px solid rgba(214,178,94,0.24);
+        border: 1px solid rgba(214,178,94,0.22);
         color: var(--gold-2);
-        font-size: 0.82rem;
+        font-size: 0.78rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        margin-bottom: 18px;
+        margin-bottom: 14px;
       }
 
       h1, h2, h3 {
-        margin: 0 0 14px;
+        margin: 0 0 10px;
         line-height: 1.08;
         letter-spacing: -0.02em;
       }
 
       h1 {
-        font-size: clamp(2.4rem, 5vw, 4.4rem);
+        font-size: clamp(2.1rem, 4.6vw, 3.6rem);
         max-width: 12ch;
       }
 
       h2 {
-        font-size: clamp(1.7rem, 3vw, 2.6rem);
+        font-size: clamp(1.45rem, 2.5vw, 2.05rem);
       }
 
       h3 {
-        font-size: 1.15rem;
+        font-size: 1.03rem;
       }
 
       p {
-        margin: 0 0 16px;
+        margin: 0 0 12px;
         color: var(--muted);
-        font-size: 1.02rem;
+        font-size: 0.96rem;
       }
 
       .lead {
-        font-size: 1.16rem;
-        max-width: 64ch;
+        font-size: 1.04rem;
+        max-width: 62ch;
       }
 
       .hero-actions {
         display: flex;
         flex-wrap: wrap;
-        gap: 14px;
-        margin: 28px 0 30px;
+        gap: 12px;
+        margin: 20px 0 20px;
       }
 
       .feature-list {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-        margin-top: 12px;
+        gap: 10px;
       }
 
       .feature-item {
-        padding: 16px 18px;
+        padding: 12px 14px;
         background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
         color: var(--text);
         font-weight: 600;
+        font-size: 0.92rem;
       }
 
       .hero-card,
       .panel {
-        background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.05));
+        background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.045));
         border: 1px solid var(--line);
         border-radius: var(--radius);
         box-shadow: var(--shadow);
       }
 
       .hero-card {
-        padding: 28px;
+        padding: 22px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -221,59 +220,58 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        font-size: 0.8rem;
-        margin-bottom: 14px;
+        font-size: 0.76rem;
+        margin-bottom: 10px;
       }
 
       .metrics {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 14px;
-        margin: 22px 0 10px;
+        gap: 10px;
+        margin: 16px 0 8px;
       }
 
       .metric {
-        padding: 18px;
-        border-radius: 16px;
+        padding: 14px;
+        border-radius: 14px;
         background: rgba(255,255,255,0.05);
         border: 1px solid rgba(255,255,255,0.08);
       }
 
       .metric strong {
         display: block;
-        font-size: 1.45rem;
+        font-size: 1.16rem;
         color: var(--text);
-        margin-bottom: 4px;
+        margin-bottom: 2px;
       }
 
       .metric span {
         color: var(--muted);
-        font-size: 0.95rem;
+        font-size: 0.84rem;
       }
 
       .signal {
-        margin-top: 12px;
-        padding: 16px 18px;
-        border-radius: 16px;
+        margin-top: 10px;
+        padding: 12px 14px;
+        border-radius: 14px;
         background: rgba(214,178,94,0.08);
-        border: 1px solid rgba(214,178,94,0.2);
+        border: 1px solid rgba(214,178,94,0.18);
         color: #f4e7bf;
+        font-size: 0.92rem;
       }
 
-      section {
-        padding: 34px 0;
-      }
+      section { padding: 18px 0; }
 
       .section-head {
         max-width: 760px;
-        margin-bottom: 28px;
+        margin-bottom: 16px;
       }
 
       .grid-2,
       .grid-3,
       .grid-4 {
         display: grid;
-        gap: 18px;
+        gap: 14px;
       }
 
       .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -281,9 +279,9 @@
       .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
       .card {
-        padding: 24px;
-        border-radius: 18px;
-        background: rgba(255,255,255,0.05);
+        padding: 18px;
+        border-radius: 16px;
+        background: rgba(255,255,255,0.045);
         border: 1px solid rgba(255,255,255,0.08);
       }
 
@@ -291,49 +289,45 @@
       .panel p:last-child { margin-bottom: 0; }
 
       .card-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         background: rgba(214,178,94,0.14);
         color: var(--gold-2);
         font-weight: 800;
-        margin-bottom: 16px;
-      }
-
-      .problem .card {
-        background: rgba(255,255,255,0.04);
+        margin-bottom: 12px;
+        font-size: 0.88rem;
       }
 
       .split-panel {
         display: grid;
         grid-template-columns: 1.1fr 0.9fr;
-        gap: 18px;
+        gap: 14px;
         align-items: stretch;
       }
 
-      .panel {
-        padding: 28px;
-      }
+      .panel { padding: 22px; }
 
       .checklist {
         display: grid;
-        gap: 12px;
-        margin-top: 18px;
+        gap: 10px;
+        margin-top: 14px;
       }
 
       .check {
         display: flex;
         align-items: flex-start;
-        gap: 12px;
+        gap: 10px;
         color: var(--text);
+        font-size: 0.94rem;
       }
 
       .check i {
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
         border-radius: 999px;
         background: rgba(214,178,94,0.16);
         color: var(--gold-2);
@@ -342,23 +336,15 @@
         justify-content: center;
         font-style: normal;
         font-weight: 800;
-        flex: 0 0 24px;
+        flex: 0 0 22px;
         margin-top: 1px;
       }
 
-      .use-cases .card,
-      .trust .card,
-      .how-it-works .card {
-        min-height: 100%;
-      }
-
-      .steps {
-        counter-reset: step;
-      }
+      .steps { counter-reset: step; }
 
       .step {
         position: relative;
-        padding-top: 58px;
+        padding-top: 50px;
       }
 
       .step::before {
@@ -367,22 +353,23 @@
         position: absolute;
         top: 0;
         left: 0;
-        width: 42px;
-        height: 42px;
+        width: 36px;
+        height: 36px;
         border-radius: 999px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         font-weight: 800;
+        font-size: 0.92rem;
         background: linear-gradient(135deg, var(--gold), var(--gold-2));
         color: #08111d;
       }
 
       .cta-band {
-        padding: 34px;
-        border-radius: 24px;
+        padding: 24px;
+        border-radius: 20px;
         background:
-          linear-gradient(180deg, rgba(214,178,94,0.12), rgba(214,178,94,0.06)),
+          linear-gradient(180deg, rgba(214,178,94,0.11), rgba(214,178,94,0.05)),
           rgba(255,255,255,0.04);
         border: 1px solid rgba(214,178,94,0.18);
         box-shadow: var(--shadow);
@@ -391,44 +378,38 @@
       .cta-actions {
         display: flex;
         flex-wrap: wrap;
-        gap: 14px;
-        margin-top: 22px;
+        gap: 12px;
+        margin-top: 16px;
       }
 
       .micro-note {
-        font-size: 0.92rem;
+        font-size: 0.86rem;
         color: var(--muted);
-        margin-top: 14px;
+        margin-top: 10px;
       }
 
       footer {
-        padding: 24px 0 42px;
+        padding: 18px 0 30px;
         color: var(--muted);
-        font-size: 0.94rem;
+        font-size: 0.88rem;
       }
 
       .footer-box {
         display: flex;
         justify-content: space-between;
         gap: 18px;
-        padding-top: 20px;
+        padding-top: 16px;
         border-top: 1px solid rgba(255,255,255,0.08);
       }
 
       @media (max-width: 980px) {
         .hero-grid,
         .split-panel,
-        .grid-4 {
-          grid-template-columns: 1fr;
-        }
-
+        .grid-4 { grid-template-columns: 1fr; }
         .grid-3,
         .grid-2,
         .feature-list,
-        .metrics {
-          grid-template-columns: 1fr;
-        }
-
+        .metrics { grid-template-columns: 1fr; }
         h1 { max-width: 100%; }
       }
 
@@ -436,7 +417,8 @@
         .topbar-inner {
           align-items: flex-start;
           flex-direction: column;
-          padding: 14px 0;
+          padding: 12px 0;
+          min-height: auto;
         }
 
         .nav-actions,
@@ -448,17 +430,14 @@
 
         .nav-actions .btn,
         .hero-actions .btn,
-        .cta-actions .btn {
-          width: 100%;
-        }
+        .cta-actions .btn { width: 100%; }
 
-        .hero,
-        section { padding: 26px 0; }
-
+        .hero { padding: 34px 0 18px; }
+        section { padding: 14px 0; }
         .hero-card,
         .panel,
         .card,
-        .cta-band { padding: 22px; }
+        .cta-band { padding: 18px; }
       }
     </style>
   </head>
@@ -537,32 +516,32 @@
       <section class="problem">
         <div class="container">
           <div class="section-head">
-            <h2>When a component does not arrive, production stops</h2>
+            <h2>Built for the moments where delay becomes downtime</h2>
             <p>
-              In aerospace and precision engineering environments, delay is not a minor inconvenience. It creates downtime, disrupts build schedules, increases cost and introduces avoidable risk.
+              Gilead is designed for urgent aerospace and precision engineering deliveries where timing, handling and accountability matter more than generic courier volume.
             </p>
           </div>
 
           <div class="grid-4">
             <div class="card">
               <div class="card-icon">01</div>
-              <h3>Missed deliveries delay builds</h3>
-              <p>Critical parts arriving late can hold up assembly, testing, inspection and dispatch.</p>
+              <h3>Direct delivery</h3>
+              <p>No depot chain, no network handoffs, no avoidable touchpoints.</p>
             </div>
             <div class="card">
               <div class="card-icon">02</div>
-              <h3>Incorrect handling damages value</h3>
-              <p>Sensitive, precision-machined and high-value components should not be treated as generic freight.</p>
+              <h3>Controlled handling</h3>
+              <p>Suitable for sensitive, precision-machined and high-value components.</p>
             </div>
             <div class="card">
               <div class="card-icon">03</div>
-              <h3>Network handoffs increase risk</h3>
-              <p>Multiple transfer points create avoidable exposure, delay and loss of accountability.</p>
+              <h3>Fast response</h3>
+              <p>Built for production-critical runs, urgent recoveries and short-notice jobs.</p>
             </div>
             <div class="card">
               <div class="card-icon">04</div>
-              <h3>Poor communication creates uncertainty</h3>
-              <p>When timing matters, operations teams need clarity, not vague updates and call chasing.</p>
+              <h3>Clear accountability</h3>
+              <p>One accountable operator from collection through to delivery.</p>
             </div>
           </div>
         </div>
@@ -604,55 +583,48 @@
       <section class="use-cases">
         <div class="container">
           <div class="section-head">
-            <h2>Designed for real operational scenarios</h2>
-            <p>
-              This service is built for the kinds of jobs where a standard courier model is simply not good enough.
-            </p>
+            <h2>Typical aerospace use cases</h2>
           </div>
 
-          <div class="grid-2">
+          <div class="grid-3">
             <div class="card">
-              <h3>Urgent part delivery to prevent production downtime</h3>
-              <p>When a missing component threatens output, you need a direct response that gets the part where it needs to be without delay.</p>
+              <h3>Urgent part delivery</h3>
+              <p>Prevent production downtime when a critical component must move immediately.</p>
             </div>
             <div class="card">
-              <h3>Time-critical transfer between sites</h3>
-              <p>Move components, tooling or priority items between facilities with a single point of responsibility throughout the run.</p>
+              <h3>Site-to-site transfer</h3>
+              <p>Move components, tooling or priority items between facilities with full control.</p>
             </div>
             <div class="card">
-              <h3>Late-stage supply chain recovery</h3>
-              <p>Recover schedule pressure with a premium same-day solution when conventional transport has already become the bottleneck.</p>
-            </div>
-            <div class="card">
-              <h3>Weekend or out-of-hours emergency runs</h3>
-              <p>When the need is urgent and the clock is working against you, Gilead is structured for high-value, time-sensitive support.</p>
+              <h3>Out-of-hours recovery</h3>
+              <p>Support weekend, evening or late-stage supply chain recovery runs.</p>
             </div>
           </div>
         </div>
       </section>
 
       <section class="trust">
-        <div class="container">
-          <div class="section-head">
+        <div class="container split-panel">
+          <div class="panel">
             <h2>Built for high-trust environments</h2>
             <p>
-              Aerospace and engineering teams do not need theatrics. They need dependable execution, clear communication and a courier partner who understands the consequence of failure.
+              Aerospace teams do not need vague promises. They need dependable execution, controlled handling and direct communication throughout the run.
             </p>
+            <div class="checklist">
+              <div class="check"><i>✓</i><div><strong>Regulated-sector mindset</strong><br />Positioned for sectors where delivery failure carries real operational cost.</div></div>
+              <div class="check"><i>✓</i><div><strong>Premium service standard</strong><br />Designed for clients who prioritise reliability over low-cost volume transport.</div></div>
+              <div class="check"><i>✓</i><div><strong>Direct communication</strong><br />Clear updates from a single accountable operator.</div></div>
+            </div>
           </div>
 
-          <div class="grid-3">
-            <div class="card">
-              <h3>Regulated-sector mindset</h3>
-              <p>Positioned for sectors where timing, discipline and controlled handling are commercially important.</p>
-            </div>
-            <div class="card">
-              <h3>Direct communication</h3>
-              <p>Clear updates and a single accountable operator throughout collection, transit and delivery.</p>
-            </div>
-            <div class="card">
-              <h3>Premium service standard</h3>
-              <p>Designed for clients who prioritise reliability, discretion and control over low-cost volume transport.</p>
-            </div>
+          <div class="panel">
+            <h3>Why this converts better</h3>
+            <p>
+              This page now works more like your homepage: fewer words, stronger hierarchy and clearer sections, while still speaking directly to aerospace buyers.
+            </p>
+            <p>
+              It is tighter by design so cold traffic can understand the offer quickly and move straight into booking.
+            </p>
           </div>
         </div>
       </section>
@@ -709,7 +681,7 @@
           Premium direct-delivery courier service for time-critical, high-value jobs.
         </div>
         <div>
-          Aerospace landing page linked to existing booking and automation workflow.
+          Aerospace page aligned to your existing booking and automation workflow.
         </div>
       </div>
     </footer>
