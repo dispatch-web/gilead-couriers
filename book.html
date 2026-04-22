@@ -92,7 +92,6 @@
       .estimate .value { font-size: 18px; font-weight: 900; letter-spacing: 0.2px; }
       .estimate .warn { margin-top: 8px; font-size: 12px; color:#7a1c00; }
 
-      /* ADDED: compact checkbox row */
       .checkrow {
         display:flex;
         gap: 10px;
@@ -108,7 +107,6 @@
         margin:0;
       }
 
-      /* ADDED: availability + recurring booking UI */
       .notice {
         margin-top: 14px;
         padding: 12px;
@@ -200,7 +198,6 @@
 
         <form id="bookingForm">
 
-          <!-- COMPANY + INDUSTRY -->
           <div class="row">
             <div>
               <label for="company">Company / Business name *</label>
@@ -229,7 +226,6 @@
             </div>
           </div>
 
-          <!-- SERVICE TYPE -->
           <label for="serviceType">Service type *</label>
           <select id="serviceType" name="serviceType" required>
             <option value="oneway">One-way (Pickup → Drop-off)</option>
@@ -239,7 +235,6 @@
             Return same day prices as a dedicated shuttle (miles are calculated for one-way, then priced as a round trip).
           </div>
 
-          <!-- ADDED: Immediate delivery flag -->
           <div class="checkrow">
             <input id="immediateDelivery" name="immediateDelivery" type="checkbox" />
             <label class="checklabel" for="immediateDelivery">Immediate delivery (pickup within 1–4 hours)</label>
@@ -247,9 +242,7 @@
           <div class="hint">
             Select only if you require a rapid pickup window. This applies a dedicated-response premium.
           </div>
-          <!-- END ADDED -->
 
-          <!-- PICKUP -->
           <label for="pickup">Pickup address *</label>
           <textarea
             id="pickup"
@@ -258,7 +251,6 @@
             placeholder="e.g. 10 Downing Street, London SW1A 2AA"
           ></textarea>
 
-          <!-- DROPOFF -->
           <label for="dropoff">Drop-off address *</label>
           <textarea
             id="dropoff"
@@ -310,7 +302,6 @@
             placeholder="e.g. PO-123456"
           />
 
-          <!-- ADDED: availability note -->
           <div class="notice">
             <strong>Booking availability</strong>
             Gilead bookings are currently available on <strong>Sunday to Wednesday</strong>.
@@ -332,7 +323,6 @@
             </div>
           </div>
 
-          <!-- ADDED: recurring booking section -->
           <div class="recurring-box">
             <label>Would you like to make this a recurring booking?</label>
             <p class="recurring-intro">
@@ -393,7 +383,6 @@
             placeholder="Fragile items, access instructions, parking, contact name, etc."
           ></textarea>
 
-          <!-- Total-only estimate -->
           <div id="estimateBox" class="estimate">
             <div class="label">Estimated premium price</div>
             <div id="estimateValue" class="value">—</div>
@@ -426,15 +415,12 @@
         const estimateValue = document.getElementById("estimateValue");
         const estimateWarn = document.getElementById("estimateWarn");
 
-        // ADDED: recurring + availability refs
         const whenDateEl = document.getElementById("whenDate");
         const availabilityWarningEl = document.getElementById("availabilityWarning");
         const customRepeatWrap = document.getElementById("customRepeatWrap");
         const customRepeatDetailsEl = document.getElementById("customRepeatDetails");
+        const industryEl = document.getElementById("industry");
 
-        // ---------------------------
-        // BASE PRICING (FALLBACK ONLY)
-        // ---------------------------
         const PRICING = {
           baseUpTo20: 120,
           perMileOver20: 2.75,
@@ -449,9 +435,6 @@
           rounding: 10
         };
 
-        // ---------------------------
-        // INDUSTRY PRICING PROFILES (MATCH API PR-PROFILES-V3.0)
-        // ---------------------------
         const INDUSTRY_PRICING = {
           "Aerospace": {
             oneway: {
@@ -707,7 +690,6 @@
           return !!(el && el.checked);
         }
 
-        // ADDED
         function getRepeatType() {
           const checked = document.querySelector('input[name="repeatType"]:checked');
           return checked ? checked.value : "one_off";
@@ -733,16 +715,14 @@
           return false;
         }
 
-        // ADDED
         function isAerometBlockedDate(dateStr) {
           if (!dateStr) return false;
           const dt = new Date(dateStr + "T12:00:00");
           if (Number.isNaN(dt.getTime())) return false;
           const day = dt.getDay();
-          return day === 4 || day === 5 || day === 6; // Thu, Fri, Sat
+          return day === 4 || day === 5 || day === 6;
         }
 
-        // ADDED
         function validateAvailability(showStatusMessage) {
           const dateVal = getVal("whenDate");
           const blocked = isAerometBlockedDate(dateVal);
@@ -766,7 +746,6 @@
           return !blocked;
         }
 
-        // ADDED
         function syncRepeatUI() {
           const repeatType = getRepeatType();
           const showCustom = repeatType === "custom";
@@ -777,6 +756,49 @@
 
           if (customRepeatDetailsEl) {
             customRepeatDetailsEl.required = showCustom;
+          }
+        }
+
+        function applyIndustryFromQuery() {
+          if (!industryEl) return;
+
+          const params = new URLSearchParams(window.location.search || "");
+          const industryParamRaw = params.get("industry");
+          if (!industryParamRaw) return;
+
+          const normalized = industryParamRaw.trim().toLowerCase();
+
+          const industryMap = {
+            "aerospace": "Aerospace",
+            "defence": "Defence",
+            "defense": "Defence",
+            "engineering": "Engineering",
+            "legal": "Legal",
+            "medical": "Medical",
+            "financial services": "Financial Services",
+            "financial-services": "Financial Services",
+            "financial_services": "Financial Services",
+            "government": "Government / Public Sector",
+            "public sector": "Government / Public Sector",
+            "government / public sector": "Government / Public Sector",
+            "government-public-sector": "Government / Public Sector",
+            "government_public_sector": "Government / Public Sector",
+            "other": "Other"
+          };
+
+          const mappedValue = industryMap[normalized];
+
+          if (mappedValue) {
+            industryEl.value = mappedValue;
+            return;
+          }
+
+          const matchingOption = Array.from(industryEl.options).find((opt) => {
+            return String(opt.value || "").trim().toLowerCase() === normalized;
+          });
+
+          if (matchingOption) {
+            industryEl.value = matchingOption.value;
           }
         }
 
@@ -964,7 +986,6 @@
           if (el) el.addEventListener("change", renderEstimate);
         });
 
-        // ADDED
         if (whenDateEl) {
           whenDateEl.addEventListener("input", function () {
             validateAvailability(false);
@@ -974,11 +995,11 @@
           });
         }
 
-        // ADDED
         document.querySelectorAll('input[name="repeatType"]').forEach((el) => {
           el.addEventListener("change", syncRepeatUI);
         });
 
+        applyIndustryFromQuery();
         renderEstimate();
         syncRepeatUI();
         validateAvailability(false);
@@ -1018,8 +1039,8 @@
             poNumber: getVal("poNumber").trim(),
             whenDate: getVal("whenDate"),
             whenTime: getVal("whenTime"),
-            repeatType: getRepeatType(),                    // ADDED
-            customRepeatDetails: getVal("customRepeatDetails").trim(), // ADDED
+            repeatType: getRepeatType(),
+            customRepeatDetails: getVal("customRepeatDetails").trim(),
             notes: getVal("notes").trim()
           };
 
