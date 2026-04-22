@@ -36,17 +36,18 @@
       padding:0 20px;
     }
 
-    /* FULL-WIDTH WRAPPER – MINIMAL EDGE PADDING */
     .wrapFull{
       width:100%;
       margin:0 auto;
-      padding:0 8px; /* as close to edges as practical */
+      padding:0 8px;
     }
 
     header{
       background: linear-gradient(180deg, var(--navy), var(--navy-dark));
       color:#fff;
       border-bottom:1px solid rgba(255,255,255,0.08);
+      position: relative;
+      z-index: 50;
     }
 
     .topbar{
@@ -83,6 +84,7 @@
       align-items:center;
       gap:14px;
       flex-wrap:wrap;
+      position: relative;
     }
 
     .navlink{
@@ -90,11 +92,20 @@
       color:rgba(255,255,255,0.85);
       padding:8px 10px;
       border-radius:10px;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      cursor:pointer;
+      border:none;
+      background:transparent;
+      font-family:inherit;
     }
 
-    .navlink:hover{
+    .navlink:hover,
+    .navlink:focus-visible{
       background:rgba(255,255,255,0.08);
       color:#fff;
+      outline:none;
     }
 
     .cta{
@@ -180,7 +191,7 @@
       border:1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: 0 10px 22px rgba(0,0,0,0.06);
-      padding:10px 12px; /* shallow */
+      padding:10px 12px;
     }
 
     .muted{
@@ -197,7 +208,6 @@
       width:100%;
     }
 
-    /* INLINE SECTION TITLE */
     .inlineTitle{
       font-size:14px;
       letter-spacing:0.6px;
@@ -243,13 +253,67 @@
       line-height:1.4;
     }
 
+    .industriesMenu{
+      position: relative;
+    }
+
+    .industriesToggle .caret{
+      font-size:11px;
+      opacity:0.9;
+      transition: transform 0.18s ease;
+    }
+
+    .industriesMenu.open .industriesToggle .caret{
+      transform: rotate(180deg);
+    }
+
+    .dropdown{
+      position:absolute;
+      top:calc(100% + 10px);
+      right:0;
+      min-width:250px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow:0 18px 34px rgba(0,0,0,0.16);
+      padding:8px;
+      display:none;
+      z-index:100;
+    }
+
+    .industriesMenu.open .dropdown{
+      display:block;
+    }
+
+    .dropdown a{
+      display:block;
+      padding:10px 12px;
+      border-radius:10px;
+      font-size:13px;
+      color:var(--ink);
+      line-height:1.35;
+    }
+
+    .dropdown a:hover{
+      background:var(--bg);
+      color:var(--navy);
+    }
+
+    .dropdownLabel{
+      padding:8px 12px 6px;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:0.7px;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+
     footer{
       padding:16px 0 28px;
       font-size:12px;
       color:var(--muted);
     }
 
-    /* FOOTER: © left, links centered, same line */
     .footerRow{
       display:grid;
       grid-template-columns: 1fr auto 1fr;
@@ -290,6 +354,39 @@
       main{ padding:12px 0; }
       .wrapFull{ padding:0 6px; }
 
+      .topbar{
+        align-items:flex-start;
+        flex-direction:column;
+      }
+
+      nav{
+        width:100%;
+        align-items:stretch;
+        flex-direction:column;
+        gap:8px;
+      }
+
+      .navlink,
+      .cta{
+        width:100%;
+        justify-content:flex-start;
+      }
+
+      .industriesMenu{
+        width:100%;
+      }
+
+      .dropdown{
+        position:static;
+        top:auto;
+        right:auto;
+        min-width:0;
+        width:100%;
+        margin-top:6px;
+        box-shadow:none;
+        border:1px solid rgba(255,255,255,0.12);
+      }
+
       .footerRow{
         grid-template-columns:1fr;
         gap:10px;
@@ -315,7 +412,28 @@
           <p>Discreet. Reliable. Elite.</p>
         </div>
       </div>
+
       <nav>
+        <a class="navlink" href="/">Home</a>
+
+        <div class="industriesMenu" id="industriesMenu">
+          <button class="navlink industriesToggle" id="industriesToggle" type="button" aria-expanded="false" aria-controls="industriesDropdown">
+            Industries <span class="caret">▼</span>
+          </button>
+
+          <div class="dropdown" id="industriesDropdown">
+            <div class="dropdownLabel">Select industry</div>
+            <a href="/aerospace-courier.html">Aerospace</a>
+            <a href="/legal-courier.html">Legal</a>
+            <a href="/medical-courier.html">Medical</a>
+            <a href="/engineering-courier.html">Engineering</a>
+            <a href="/defence-courier.html">Defence</a>
+            <a href="/financial-services-courier.html">Financial Services</a>
+            <a href="/government-public-sector-courier.html">Government / Public Sector</a>
+            <a href="/other-industries-courier.html">Other Industries</a>
+          </div>
+        </div>
+
         <a class="navlink" href="/book.html">Book</a>
         <a class="cta" href="/book.html">Book a Courier</a>
       </nav>
@@ -367,12 +485,12 @@
 
         <div class="howSteps">
           <div class="step">
-            <strong>1) Book</strong>
-            <span>Submit job details securely using the booking form.</span>
+            <strong>1) Select sector</strong>
+            <span>Choose your industry from the navigation menu for the most relevant service page.</span>
           </div>
           <div class="step">
-            <strong>2) Confirm</strong>
-            <span>We validate timing, requirements and route feasibility.</span>
+            <strong>2) Book</strong>
+            <span>Submit job details securely using the booking form.</span>
           </div>
           <div class="step">
             <strong>3) Deliver</strong>
@@ -403,6 +521,48 @@
 
 <script>
   document.getElementById("y").textContent = new Date().getFullYear();
+
+  (function () {
+    const menu = document.getElementById("industriesMenu");
+    const toggle = document.getElementById("industriesToggle");
+
+    if (!menu || !toggle) return;
+
+    function openMenu() {
+      menu.classList.add("open");
+      toggle.setAttribute("aria-expanded", "true");
+    }
+
+    function closeMenu() {
+      menu.classList.remove("open");
+      toggle.setAttribute("aria-expanded", "false");
+    }
+
+    function toggleMenu() {
+      if (menu.classList.contains("open")) closeMenu();
+      else openMenu();
+    }
+
+    toggle.addEventListener("click", function (e) {
+      e.stopPropagation();
+      toggleMenu();
+    });
+
+    menu.addEventListener("mouseenter", openMenu);
+    menu.addEventListener("mouseleave", closeMenu);
+
+    document.addEventListener("click", function (e) {
+      if (!menu.contains(e.target)) {
+        closeMenu();
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        closeMenu();
+      }
+    });
+  })();
 </script>
 
 </body>
