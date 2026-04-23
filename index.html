@@ -378,7 +378,24 @@
 
       .dropdown{
         position:static;
+        top:auto;
+        right:auto;
+        min-width:0;
         width:100%;
+        margin-top:6px;
+        box-shadow:none;
+        border:1px solid rgba(255,255,255,0.12);
+      }
+
+      .footerRow{
+        grid-template-columns:1fr;
+        gap:10px;
+        text-align:center;
+      }
+
+      .footerLeft,
+      .footerCenter{
+        justify-self:center;
       }
     }
   </style>
@@ -398,19 +415,20 @@
 
       <nav>
         <div class="industriesMenu" id="industriesMenu">
-          <button class="navlink industriesToggle" id="industriesToggle" type="button">
+          <button class="navlink industriesToggle" id="industriesToggle" type="button" aria-expanded="false" aria-controls="industriesDropdown">
             Industries <span class="caret">▼</span>
           </button>
 
-          <div class="dropdown">
+          <div class="dropdown" id="industriesDropdown">
+            <div class="dropdownLabel">Select industry</div>
             <a href="/aerospace-courier.html">Aerospace</a>
             <a href="/legal-courier.html">Legal</a>
             <a href="/medical-courier.html">Medical</a>
             <a href="/engineering-courier.html">Engineering</a>
             <a href="/defence-courier.html">Defence</a>
             <a href="/financial-services-courier.html">Financial Services</a>
-            <a href="/government-public-sector-courier.html">Government</a>
-            <a href="/other-industries-courier.html">Other</a>
+            <a href="/government-public-sector-courier.html">Government / Public Sector</a>
+            <a href="/other-industries-courier.html">Other Industries</a>
           </div>
         </div>
 
@@ -420,7 +438,83 @@
   </div>
 </header>
 
-<!-- REST OF PAGE UNCHANGED -->
+<section class="hero">
+  <div class="wrap">
+    <div class="heroInner">
+      <div>
+        <h2>A professional A-to-B courier service.</h2>
+        <p>
+          Time-critical, discreet courier movements across the UK for high-trust,
+          regulated and professional clients.
+        </p>
+
+        <div class="heroActions">
+          <a class="btnPrimary" href="/book.html">Book a Courier</a>
+          <a class="btnGhost" href="/about.html">About Us</a>
+        </div>
+
+        <div class="reassure">Fully insured. Direct A-to-B only. No subcontracting.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="wrapFull">
+    <div class="grid2">
+
+      <div class="panel">
+        <div class="inlineTitle">
+          Trusted by professional clients
+          <span>across regulated and high-trust sectors</span>
+        </div>
+        <p class="muted">
+          We handle delicate, fragile and high-value consignments with secure transport, controlled processes and meticulous attention to detail — from precision-engineered components to confidential and time-critical materials.
+          We support legal, engineering, aerospace, medical-supply and professional services clients across the UK. Private and small-business courier requirements are supported where discretion and reliability matter.
+        </p>
+      </div>
+
+      <div class="panel">
+        <div class="inlineTitle">
+          How it works
+          <span>A simple, controlled process designed for time-critical work.</span>
+        </div>
+
+        <div class="howSteps">
+          <div class="step">
+            <strong>1) Select sector</strong>
+            <span>Choose your industry from the navigation menu for the most relevant service page.</span>
+          </div>
+          <div class="step">
+            <strong>2) Book</strong>
+            <span>Submit job details securely using the booking form.</span>
+          </div>
+          <div class="step">
+            <strong>3) Deliver</strong>
+            <span>Direct A-to-B courier delivery with confirmation on completion.</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="footerRow">
+    <div class="footerLeft">© <span id="y"></span> Gilead Couriers</div>
+
+    <div class="footerCenter">
+      <a href="/terms.html">Terms</a>
+      <span>·</span>
+      <a href="/refund-policy.html">Refund Policy</a>
+      <span>·</span>
+      <a href="/privacy-policy.html">Privacy Policy</a>
+    </div>
+
+    <div></div>
+  </div>
+</footer>
 
 <script>
   document.getElementById("y").textContent = new Date().getFullYear();
@@ -431,23 +525,33 @@
 
     if (!menu || !toggle) return;
 
-    toggle.addEventListener("click", function(e){
+    function openMenu() {
+      menu.classList.add("open");
+      toggle.setAttribute("aria-expanded", "true");
+    }
+
+    function closeMenu() {
+      menu.classList.remove("open");
+      toggle.setAttribute("aria-expanded", "false");
+    }
+
+    function toggleMenu() {
+      if (menu.classList.contains("open")) closeMenu();
+      else openMenu();
+    }
+
+    toggle.addEventListener("click", function (e) {
       e.stopPropagation();
-      menu.classList.toggle("open");
+      toggleMenu();
     });
 
-    document.addEventListener("click", function(e){
-      if (!menu.contains(e.target)) {
-        menu.classList.remove("open");
-      }
+    document.addEventListener("click", function (e) {
+      if (!menu.contains(e.target)) closeMenu();
     });
 
-    document.addEventListener("keydown", function(e){
-      if (e.key === "Escape") {
-        menu.classList.remove("open");
-      }
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeMenu();
     });
-
   })();
 </script>
 
