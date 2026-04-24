@@ -1,4 +1,4 @@
- <!doctype html>
+<!doctype html>
 <html lang="en-GB">
   <head>
     <meta charset="utf-8" />
@@ -685,14 +685,7 @@
 
           if (!isAeromet) return null;
 
-          if (serviceType !== "return_same_day") {
-            return {
-              locked: false,
-              manual: true,
-              total: 0,
-              note: "Aeromet pricing is locked for agreed return routes only. Please request manual pricing for this job."
-            };
-          }
+          if (serviceType !== "return_same_day") return null;
 
           if (dropoffText.includes("cardiff") || allText.includes("cardiff")) {
             return {
@@ -712,12 +705,7 @@
             };
           }
 
-          return {
-            locked: false,
-            manual: true,
-            total: 0,
-            note: "Aeromet route requires manual pricing until this route is agreed and locked."
-          };
+          return null;
         }
 
         function roundToNearest(amount, nearest) {
@@ -910,15 +898,6 @@
             };
           }
 
-          if (aerometPrice && aerometPrice.manual) {
-            return {
-              ok: false,
-              manual: true,
-              total: 0,
-              reason: aerometPrice.note
-            };
-          }
-
           const P = getPricingProfile(industry, serviceType);
 
           if (!oneWayMiles || oneWayMiles < 1) {
@@ -928,12 +907,20 @@
           const isReturn = String(serviceType) === "return_same_day";
           const effectiveMiles = isReturn ? (oneWayMiles * 2) : oneWayMiles;
 
-          if (effectiveMiles >= P.manualQuoteMiles) {
+          const isAeromet =
+            normaliseText(getVal("company")).includes("aeromet") ||
+            normaliseText(getVal("pickup")).includes("aeromet") ||
+            normaliseText(getVal("pickup")).includes("rochester") ||
+            normaliseText(getVal("pickup")).includes("kent");
+
+          const manualQuoteMiles = isAeromet ? 300 : P.manualQuoteMiles;
+
+          if (effectiveMiles >= manualQuoteMiles) {
             return {
               ok: false,
               manual: true,
               total: 0,
-              reason: `Manual quote. For ${P.manualQuoteMiles}+ miles, Gilead issues a manual premium quote.`
+              reason: `Manual quote. For ${manualQuoteMiles}+ miles, Gilead issues a manual premium quote.`
             };
           }
 
@@ -1109,19 +1096,21 @@
             payload.serviceType
           );
 
-          if (aerometPrice && aerometPrice.manual) {
-            setStatus(aerometPrice.note, "error");
-            submitBtn.disabled = false;
-            return;
-          }
-
           if (!aerometPrice || !aerometPrice.locked) {
             const oneWayMiles = parseMiles(payload.miles);
             const P = getPricingProfile(payload.industry, payload.serviceType);
             const effectiveMiles = (payload.serviceType === "return_same_day") ? (oneWayMiles * 2) : oneWayMiles;
 
-            if (effectiveMiles >= P.manualQuoteMiles) {
-              setStatus(`Manual quote. For ${P.manualQuoteMiles}+ miles, Gilead issues a manual premium quote. Please contact dispatch for a bespoke price.`, "error");
+            const isAeromet =
+              normaliseText(payload.company).includes("aeromet") ||
+              normaliseText(payload.pickup).includes("aeromet") ||
+              normaliseText(payload.pickup).includes("rochester") ||
+              normaliseText(payload.pickup).includes("kent");
+
+            const manualQuoteMiles = isAeromet ? 300 : P.manualQuoteMiles;
+
+            if (effectiveMiles >= manualQuoteMiles) {
+              setStatus(`Manual quote. For ${manualQuoteMiles}+ miles, Gilead issues a manual premium quote. Please contact dispatch for a bespoke price.`, "error");
               submitBtn.disabled = false;
               return;
             }
