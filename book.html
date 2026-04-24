@@ -44,9 +44,7 @@
         line-height:1.45;
       }
 
-      .quick-note strong {
-        color:#0B1F3B;
-      }
+      .quick-note strong { color:#0B1F3B; }
 
       label { display:block; font-weight:600; margin: 14px 0 6px; }
 
@@ -103,6 +101,7 @@
         border: 1px solid rgba(11,31,59,0.12);
         display: none;
       }
+
       .estimate .label { font-size: 12px; color:#555; margin-bottom: 6px; }
       .estimate .value { font-size: 18px; font-weight: 900; letter-spacing: 0.2px; }
       .estimate .warn { margin-top: 8px; font-size: 12px; color:#7a1c00; }
@@ -113,10 +112,12 @@
         align-items: center;
         margin-top: 10px;
       }
+
       .checkrow input[type="checkbox"]{
         width:auto;
         transform: scale(1.1);
       }
+
       .checkrow .checklabel{
         font-weight:600;
         margin:0;
@@ -230,7 +231,7 @@
                 name="company"
                 type="text"
                 required
-                placeholder="e.g. Rolls Royce plc"
+                placeholder="e.g. Aeromet"
               />
             </div>
 
@@ -728,6 +729,63 @@
           return Math.max(0, Math.round(n));
         }
 
+        function normaliseText(value) {
+          return String(value || "")
+            .toLowerCase()
+            .replace(/[^\w\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+
+        function getAerometLockedPrice(company, pickup, dropoff, serviceType) {
+          const combined = normaliseText(company + " " + pickup + " " + dropoff);
+          const companyText = normaliseText(company);
+          const pickupText = normaliseText(pickup);
+          const dropoffText = normaliseText(dropoff);
+
+          const isAeromet =
+            companyText.includes("aeromet") ||
+            pickupText.includes("aeromet") ||
+            pickupText.includes("rochester") ||
+            pickupText.includes("kent");
+
+          const isReturn = serviceType === "return_same_day";
+
+          if (!isAeromet) return null;
+
+          if (!isReturn) {
+            return {
+              locked: false,
+              manual: true,
+              total: 0,
+              note: "Aeromet pricing is currently locked for agreed return routes only. Please request manual pricing for this job."
+            };
+          }
+
+          if (dropoffText.includes("cardiff") || combined.includes("cardiff")) {
+            return {
+              locked: true,
+              total: 650,
+              note: "Aeromet locked return price applied: Kent to Cardiff and back."
+            };
+          }
+
+          if (dropoffText.includes("stonehouse") || combined.includes("stonehouse")) {
+            return {
+              locked: true,
+              total: 520,
+              note: "Aeromet locked return price applied: Kent to Stonehouse and back."
+            };
+          }
+
+          return {
+            locked: false,
+            manual: true,
+            total: 0,
+            note: "Aeromet route requires manual pricing until this route is agreed and locked."
+          };
+        }
+
         function roundToNearest(amount, nearest) {
           const n = Number(nearest) || 1;
           return Math.round(amount / n) * n;
@@ -870,12 +928,7 @@
 
           if (silent && calcKey === lastAutoCalcKey) return;
 
-          if (!silent) {
-            setStatus("Calculating miles…", "");
-          } else {
-            setStatus("Auto-calculating miles…", "");
-          }
-
+          setStatus(silent ? "Auto-calculating miles…" : "Calculating miles…", "");
           submitBtn.disabled = true;
 
           try {
@@ -948,7 +1001,41 @@
           }
         });
 
+        ["company", "pickup", "dropoff", "serviceType"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.addEventListener("input", renderEstimate);
+            el.addEventListener("change", renderEstimate);
+          }
+        });
+
         function computeTotal(oneWayMiles, whenDateStr, whenTimeStr, industry, serviceType, immediateDelivery) {
+          const aerometPrice = getAerometLockedPrice(
+            getVal("company"),
+            getVal("pickup"),
+            getVal("dropoff"),
+            serviceType
+          );
+
+          if (aerometPrice && aerometPrice.locked) {
+            return {
+              ok: true,
+              manual: false,
+              total: aerometPrice.total,
+              reason: "",
+              metaNote: aerometPrice.note
+            };
+          }
+
+          if (aerometPrice && aerometPrice.manual) {
+            return {
+              ok: false,
+              manual: true,
+              total: 0,
+              reason: aerometPrice.note
+            };
+          }
+
           const P = getPricingProfile(industry, serviceType);
 
           if (!oneWayMiles || oneWayMiles < 1) {
@@ -1025,15 +1112,15 @@
           const serviceType = getVal("serviceType");
           const immediateDelivery = getChecked("immediateDelivery");
 
-          if (!oneWayMiles) {
+          const r = computeTotal(oneWayMiles, whenDate, whenTime, industry, serviceType, immediateDelivery);
+
+          if (!oneWayMiles && !(r && r.manual)) {
             estimateBox.style.display = "none";
             estimateValue.textContent = "—";
             estimateWarn.style.display = "none";
             estimateWarn.textContent = "";
             return;
           }
-
-          const r = computeTotal(oneWayMiles, whenDate, whenTime, industry, serviceType, immediateDelivery);
 
           estimateBox.style.display = "block";
 
@@ -1132,14 +1219,29 @@
             return;
           }
 
-          const oneWayMiles = parseMiles(payload.miles);
-          const P = getPricingProfile(payload.industry, payload.serviceType);
-          const effectiveMiles = (payload.serviceType === "return_same_day") ? (oneWayMiles * 2) : oneWayMiles;
+          const aerometPrice = getAerometLockedPrice(
+            payload.company,
+            payload.pickup,
+            payload.dropoff,
+            payload.serviceType
+          );
 
-          if (effectiveMiles >= P.manualQuoteMiles) {
-            setStatus(`Manual quote. For ${P.manualQuoteMiles}+ miles, Gilead issues a manual premium quote. Please contact dispatch for a bespoke price.`, "error");
+          if (aerometPrice && aerometPrice.manual) {
+            setStatus(aerometPrice.note, "error");
             submitBtn.disabled = false;
             return;
+          }
+
+          if (!aerometPrice || !aerometPrice.locked) {
+            const oneWayMiles = parseMiles(payload.miles);
+            const P = getPricingProfile(payload.industry, payload.serviceType);
+            const effectiveMiles = (payload.serviceType === "return_same_day") ? (oneWayMiles * 2) : oneWayMiles;
+
+            if (effectiveMiles >= P.manualQuoteMiles) {
+              setStatus(`Manual quote. For ${P.manualQuoteMiles}+ miles, Gilead issues a manual premium quote. Please contact dispatch for a bespoke price.`, "error");
+              submitBtn.disabled = false;
+              return;
+            }
           }
 
           try {
