@@ -1,4 +1,4 @@
-<!doctype html>
+ <!doctype html>
 <html lang="en-GB">
   <head>
     <meta charset="utf-8" />
@@ -31,20 +31,7 @@
       }
 
       h1 { margin: 0 0 8px; font-size: 24px; }
-      p.sub { margin: 0 0 12px; color:#444; }
-
-      .quick-note {
-        margin: 0 0 18px;
-        padding: 10px 12px;
-        border-radius: 12px;
-        background: rgba(11,31,59,0.06);
-        border: 1px solid rgba(11,31,59,0.12);
-        font-size: 13px;
-        color:#222;
-        line-height:1.45;
-      }
-
-      .quick-note strong { color:#0B1F3B; }
+      p.sub { margin: 0 0 20px; color:#444; }
 
       label { display:block; font-weight:600; margin: 14px 0 6px; }
 
@@ -101,7 +88,6 @@
         border: 1px solid rgba(11,31,59,0.12);
         display: none;
       }
-
       .estimate .label { font-size: 12px; color:#555; margin-bottom: 6px; }
       .estimate .value { font-size: 18px; font-weight: 900; letter-spacing: 0.2px; }
       .estimate .warn { margin-top: 8px; font-size: 12px; color:#7a1c00; }
@@ -112,12 +98,10 @@
         align-items: center;
         margin-top: 10px;
       }
-
       .checkrow input[type="checkbox"]{
         width:auto;
         transform: scale(1.1);
       }
-
       .checkrow .checklabel{
         font-weight:600;
         margin:0;
@@ -200,39 +184,23 @@
         display:none;
         margin-top: 10px;
       }
-
-      @media(max-width:700px){
-        body { padding: 14px; }
-        .row { flex-direction: column; gap: 0; }
-        .card { padding: 16px; }
-      }
     </style>
   </head>
 
   <body>
     <div class="wrap">
       <div class="card">
-        <h1>Get your courier price and book</h1>
+        <h1>Book a courier job</h1>
         <p class="sub">
-          Premium direct A-to-B courier service with secure payment via Stripe.
+          Premium fixed fee within 20 miles. Long-distance is priced by mileage + premium rules.
+          Secure payment via Stripe.
         </p>
 
-        <div class="quick-note">
-          <strong>Quick booking:</strong> enter your collection and delivery details, and the system will calculate mileage automatically where possible before showing your premium price.
-        </div>
-
         <form id="bookingForm">
-
           <div class="row">
             <div>
               <label for="company">Company / Business name *</label>
-              <input
-                id="company"
-                name="company"
-                type="text"
-                required
-                placeholder="e.g. Aeromet"
-              />
+              <input id="company" name="company" type="text" required placeholder="e.g. Rolls Royce plc" />
             </div>
 
             <div>
@@ -257,7 +225,7 @@
             <option value="return_same_day">Return same day (Deliver + collect + return to pickup)</option>
           </select>
           <div class="hint">
-            Return same day prices as a dedicated shuttle. One-way mileage is calculated first, then priced as a round trip.
+            Return same day prices as a dedicated shuttle (miles are calculated for one-way, then priced as a round trip).
           </div>
 
           <div class="checkrow">
@@ -269,26 +237,14 @@
           </div>
 
           <label for="pickup">Pickup address *</label>
-          <textarea
-            id="pickup"
-            name="pickup"
-            required
-            placeholder="e.g. Aeromet, Rochester, Kent ME1 3QX"
-          ></textarea>
+          <textarea id="pickup" name="pickup" required placeholder="e.g. 10 Downing Street, London SW1A 2AA"></textarea>
 
           <label for="dropoff">Drop-off address *</label>
-          <textarea
-            id="dropoff"
-            name="dropoff"
-            required
-            placeholder="e.g. Cardiff CF10 1EP"
-          ></textarea>
+          <textarea id="dropoff" name="dropoff" required placeholder="e.g. 1 St Peter’s Square, Manchester M2 3AE"></textarea>
 
           <div class="row">
             <div>
-              <button type="button" class="btn" id="calcMilesBtn">
-                Calculate miles now
-              </button>
+              <button type="button" class="btn" id="calcMilesBtn">Miles calculated automatically *</button>
 
               <input
                 id="miles"
@@ -297,35 +253,24 @@
                 min="1"
                 step="1"
                 required
-                placeholder="Mileage appears here"
+                placeholder="e.g. 234"
                 readonly
                 style="margin-top:10px;"
               />
 
               <div class="hint" id="milesHint">
-                Mileage will auto-calculate once both addresses include valid UK postcodes. You can also click the button above.
+                We’ll calculate miles from the pickup &amp; drop-off postcodes (one-way).
               </div>
             </div>
 
             <div>
               <label for="email">Your email address *</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                placeholder="you@example.com"
-              />
+              <input id="email" name="email" type="email" required placeholder="you@example.com" />
             </div>
           </div>
 
           <label for="poNumber">Purchase Order Number (optional)</label>
-          <input
-            id="poNumber"
-            name="poNumber"
-            type="text"
-            placeholder="e.g. PO-123456"
-          />
+          <input id="poNumber" name="poNumber" type="text" placeholder="e.g. PO-123456" />
 
           <div class="notice">
             <strong>Booking availability</strong>
@@ -402,11 +347,7 @@
           </div>
 
           <label for="notes">Notes (optional)</label>
-          <textarea
-            id="notes"
-            name="notes"
-            placeholder="Fragile items, access instructions, parking, contact name, etc."
-          ></textarea>
+          <textarea id="notes" name="notes" placeholder="Fragile items, access instructions, parking, contact name, etc."></textarea>
 
           <div id="estimateBox" class="estimate">
             <div class="label">Estimated premium price</div>
@@ -446,9 +387,6 @@
         const customRepeatDetailsEl = document.getElementById("customRepeatDetails");
         const industryEl = document.getElementById("industry");
 
-        let autoCalcTimer = null;
-        let lastAutoCalcKey = "";
-
         const PRICING = {
           baseUpTo20: 120,
           perMileOver20: 2.75,
@@ -469,7 +407,7 @@
               baseUpTo20: 120,
               perMileOver20: 2.25,
               uplift: [
-                { min: 80,  max: 119, add: 35 },
+                { min: 80, max: 119, add: 35 },
                 { min: 120, max: 210, add: 20 },
                 { min: 211, max: 259, add: 105 }
               ],
@@ -730,18 +668,14 @@
         }
 
         function normaliseText(value) {
-          return String(value || "")
-            .toLowerCase()
-            .replace(/[^\w\s]/g, " ")
-            .replace(/\s+/g, " ")
-            .trim();
+          return String(value || "").toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
         }
 
         function getAerometLockedPrice(company, pickup, dropoff, serviceType) {
-          const combined = normaliseText(company + " " + pickup + " " + dropoff);
           const companyText = normaliseText(company);
           const pickupText = normaliseText(pickup);
           const dropoffText = normaliseText(dropoff);
+          const allText = normaliseText(company + " " + pickup + " " + dropoff);
 
           const isAeromet =
             companyText.includes("aeromet") ||
@@ -749,30 +683,30 @@
             pickupText.includes("rochester") ||
             pickupText.includes("kent");
 
-          const isReturn = serviceType === "return_same_day";
-
           if (!isAeromet) return null;
 
-          if (!isReturn) {
+          if (serviceType !== "return_same_day") {
             return {
               locked: false,
               manual: true,
               total: 0,
-              note: "Aeromet pricing is currently locked for agreed return routes only. Please request manual pricing for this job."
+              note: "Aeromet pricing is locked for agreed return routes only. Please request manual pricing for this job."
             };
           }
 
-          if (dropoffText.includes("cardiff") || combined.includes("cardiff")) {
+          if (dropoffText.includes("cardiff") || allText.includes("cardiff")) {
             return {
               locked: true,
+              manual: false,
               total: 650,
               note: "Aeromet locked return price applied: Kent to Cardiff and back."
             };
           }
 
-          if (dropoffText.includes("stonehouse") || combined.includes("stonehouse")) {
+          if (dropoffText.includes("stonehouse") || allText.includes("stonehouse")) {
             return {
               locked: true,
+              manual: false,
               total: 520,
               note: "Aeromet locked return price applied: Kent to Stonehouse and back."
             };
@@ -904,10 +838,7 @@
           return m ? (m[1] + " " + m[2]).replace(/\s+/g, " ").trim() : "";
         }
 
-        async function calculateMilesFromPostcodes(options) {
-          const opts = options || {};
-          const silent = !!opts.silent;
-
+        async function calculateMilesFromPostcodes() {
           const pickupText = getVal("pickup");
           const dropoffText = getVal("dropoff");
 
@@ -917,18 +848,12 @@
           const milesEl = document.getElementById("miles");
 
           if (!from || !to) {
-            if (!silent) {
-              setStatus("Enter valid UK postcodes in Pickup and Drop-off, then click the miles calculation button.", "error");
-              if (milesEl) milesEl.readOnly = false;
-            }
+            setStatus("Enter valid UK postcodes in Pickup and Drop-off, then click the miles calculation button.", "error");
+            if (milesEl) milesEl.readOnly = false;
             return;
           }
 
-          const calcKey = from + "|" + to;
-
-          if (silent && calcKey === lastAutoCalcKey) return;
-
-          setStatus(silent ? "Auto-calculating miles…" : "Calculating miles…", "");
+          setStatus("Calculating miles…", "");
           submitBtn.disabled = true;
 
           try {
@@ -944,69 +869,27 @@
               milesEl.readOnly = true;
             }
 
-            lastAutoCalcKey = calcKey;
             setStatus(`Miles calculated: ${data.miles} miles`, "");
             renderEstimate();
           } catch (e) {
-            if (!silent) {
-              setStatus("Could not calculate miles automatically. Please enter miles manually.", "error");
-              if (milesEl) milesEl.readOnly = false;
-            } else {
-              setStatus("", "");
-            }
+            setStatus("Could not calculate miles automatically. Please enter miles manually.", "error");
+            if (milesEl) milesEl.readOnly = false;
           } finally {
             submitBtn.disabled = false;
           }
         }
 
-        function scheduleAutoMilesCalculation() {
-          const pickupText = getVal("pickup");
-          const dropoffText = getVal("dropoff");
-
-          const from = extractPostcode(pickupText);
-          const to = extractPostcode(dropoffText);
-
-          if (!from || !to) return;
-
-          clearTimeout(autoCalcTimer);
-          autoCalcTimer = setTimeout(function () {
-            calculateMilesFromPostcodes({ silent: true });
-          }, 650);
-        }
-
         const calcBtn = document.getElementById("calcMilesBtn");
-        if (calcBtn) {
-          calcBtn.addEventListener("click", function () {
-            calculateMilesFromPostcodes({ silent: false });
-          });
-        }
+        if (calcBtn) calcBtn.addEventListener("click", calculateMilesFromPostcodes);
 
         ["pickup", "dropoff"].forEach((id) => {
           const el = document.getElementById(id);
-
-          if (el) {
-            el.addEventListener("input", function () {
-              const milesEl = document.getElementById("miles");
-              if (milesEl) {
-                milesEl.value = "";
-                lastAutoCalcKey = "";
-              }
-              renderEstimate();
-              scheduleAutoMilesCalculation();
-            });
-
-            el.addEventListener("blur", function () {
-              scheduleAutoMilesCalculation();
-            });
-          }
-        });
-
-        ["company", "pickup", "dropoff", "serviceType"].forEach((id) => {
-          const el = document.getElementById(id);
-          if (el) {
-            el.addEventListener("input", renderEstimate);
-            el.addEventListener("change", renderEstimate);
-          }
+          if (el) el.addEventListener("blur", () => {
+            const milesEl = document.getElementById("miles");
+            if (milesEl && !String(milesEl.value || "").trim()) {
+              calculateMilesFromPostcodes();
+            }
+          });
         });
 
         function computeTotal(oneWayMiles, whenDateStr, whenTimeStr, industry, serviceType, immediateDelivery) {
@@ -1142,7 +1025,7 @@
           }
         }
 
-        ["industry", "serviceType", "miles", "whenDate", "whenTime", "immediateDelivery"].forEach((id) => {
+        ["industry", "serviceType", "miles", "whenDate", "whenTime", "immediateDelivery", "company", "pickup", "dropoff"].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.addEventListener("input", renderEstimate);
           if (el) el.addEventListener("change", renderEstimate);
