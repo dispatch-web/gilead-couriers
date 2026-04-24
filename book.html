@@ -31,7 +31,22 @@
       }
 
       h1 { margin: 0 0 8px; font-size: 24px; }
-      p.sub { margin: 0 0 20px; color:#444; }
+      p.sub { margin: 0 0 12px; color:#444; }
+
+      .quick-note {
+        margin: 0 0 18px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(11,31,59,0.06);
+        border: 1px solid rgba(11,31,59,0.12);
+        font-size: 13px;
+        color:#222;
+        line-height:1.45;
+      }
+
+      .quick-note strong {
+        color:#0B1F3B;
+      }
 
       label { display:block; font-weight:600; margin: 14px 0 6px; }
 
@@ -184,17 +199,26 @@
         display:none;
         margin-top: 10px;
       }
+
+      @media(max-width:700px){
+        body { padding: 14px; }
+        .row { flex-direction: column; gap: 0; }
+        .card { padding: 16px; }
+      }
     </style>
   </head>
 
   <body>
     <div class="wrap">
       <div class="card">
-        <h1>Book a courier job</h1>
+        <h1>Get your courier price and book</h1>
         <p class="sub">
-          Premium fixed fee within 20 miles. Long-distance is priced by mileage + premium rules.
-          Secure payment via Stripe.
+          Premium direct A-to-B courier service with secure payment via Stripe.
         </p>
+
+        <div class="quick-note">
+          <strong>Quick booking:</strong> enter your collection and delivery details, and the system will calculate mileage automatically where possible before showing your premium price.
+        </div>
 
         <form id="bookingForm">
 
@@ -232,7 +256,7 @@
             <option value="return_same_day">Return same day (Deliver + collect + return to pickup)</option>
           </select>
           <div class="hint">
-            Return same day prices as a dedicated shuttle (miles are calculated for one-way, then priced as a round trip).
+            Return same day prices as a dedicated shuttle. One-way mileage is calculated first, then priced as a round trip.
           </div>
 
           <div class="checkrow">
@@ -248,7 +272,7 @@
             id="pickup"
             name="pickup"
             required
-            placeholder="e.g. 10 Downing Street, London SW1A 2AA"
+            placeholder="e.g. Aeromet, Rochester, Kent ME1 3QX"
           ></textarea>
 
           <label for="dropoff">Drop-off address *</label>
@@ -256,13 +280,13 @@
             id="dropoff"
             name="dropoff"
             required
-            placeholder="e.g. 1 St Peter’s Square, Manchester M2 3AE"
+            placeholder="e.g. Cardiff CF10 1EP"
           ></textarea>
 
           <div class="row">
             <div>
               <button type="button" class="btn" id="calcMilesBtn">
-                Miles calculated automatically *
+                Calculate miles now
               </button>
 
               <input
@@ -272,13 +296,13 @@
                 min="1"
                 step="1"
                 required
-                placeholder="e.g. 234"
+                placeholder="Mileage appears here"
                 readonly
                 style="margin-top:10px;"
               />
 
               <div class="hint" id="milesHint">
-                We’ll calculate miles from the pickup &amp; drop-off postcodes (one-way).
+                Mileage will auto-calculate once both addresses include valid UK postcodes. You can also click the button above.
               </div>
             </div>
 
@@ -420,6 +444,9 @@
         const customRepeatWrap = document.getElementById("customRepeatWrap");
         const customRepeatDetailsEl = document.getElementById("customRepeatDetails");
         const industryEl = document.getElementById("industry");
+
+        let autoCalcTimer = null;
+        let lastAutoCalcKey = "";
 
         const PRICING = {
           baseUpTo20: 120,
@@ -819,7 +846,10 @@
           return m ? (m[1] + " " + m[2]).replace(/\s+/g, " ").trim() : "";
         }
 
-        async function calculateMilesFromPostcodes() {
+        async function calculateMilesFromPostcodes(options) {
+          const opts = options || {};
+          const silent = !!opts.silent;
+
           const pickupText = getVal("pickup");
           const dropoffText = getVal("dropoff");
 
@@ -829,12 +859,23 @@
           const milesEl = document.getElementById("miles");
 
           if (!from || !to) {
-            setStatus("Enter valid UK postcodes in Pickup and Drop-off, then click the miles calculation button.", "error");
-            if (milesEl) milesEl.readOnly = false;
+            if (!silent) {
+              setStatus("Enter valid UK postcodes in Pickup and Drop-off, then click the miles calculation button.", "error");
+              if (milesEl) milesEl.readOnly = false;
+            }
             return;
           }
 
-          setStatus("Calculating miles…", "");
+          const calcKey = from + "|" + to;
+
+          if (silent && calcKey === lastAutoCalcKey) return;
+
+          if (!silent) {
+            setStatus("Calculating miles…", "");
+          } else {
+            setStatus("Auto-calculating miles…", "");
+          }
+
           submitBtn.disabled = true;
 
           try {
@@ -850,27 +891,61 @@
               milesEl.readOnly = true;
             }
 
+            lastAutoCalcKey = calcKey;
             setStatus(`Miles calculated: ${data.miles} miles`, "");
             renderEstimate();
           } catch (e) {
-            setStatus("Could not calculate miles automatically. Please enter miles manually.", "error");
-            if (milesEl) milesEl.readOnly = false;
+            if (!silent) {
+              setStatus("Could not calculate miles automatically. Please enter miles manually.", "error");
+              if (milesEl) milesEl.readOnly = false;
+            } else {
+              setStatus("", "");
+            }
           } finally {
             submitBtn.disabled = false;
           }
         }
 
+        function scheduleAutoMilesCalculation() {
+          const pickupText = getVal("pickup");
+          const dropoffText = getVal("dropoff");
+
+          const from = extractPostcode(pickupText);
+          const to = extractPostcode(dropoffText);
+
+          if (!from || !to) return;
+
+          clearTimeout(autoCalcTimer);
+          autoCalcTimer = setTimeout(function () {
+            calculateMilesFromPostcodes({ silent: true });
+          }, 650);
+        }
+
         const calcBtn = document.getElementById("calcMilesBtn");
-        if (calcBtn) calcBtn.addEventListener("click", calculateMilesFromPostcodes);
+        if (calcBtn) {
+          calcBtn.addEventListener("click", function () {
+            calculateMilesFromPostcodes({ silent: false });
+          });
+        }
 
         ["pickup", "dropoff"].forEach((id) => {
           const el = document.getElementById(id);
-          if (el) el.addEventListener("blur", () => {
-            const milesEl = document.getElementById("miles");
-            if (milesEl && !String(milesEl.value || "").trim()) {
-              calculateMilesFromPostcodes();
-            }
-          });
+
+          if (el) {
+            el.addEventListener("input", function () {
+              const milesEl = document.getElementById("miles");
+              if (milesEl) {
+                milesEl.value = "";
+                lastAutoCalcKey = "";
+              }
+              renderEstimate();
+              scheduleAutoMilesCalculation();
+            });
+
+            el.addEventListener("blur", function () {
+              scheduleAutoMilesCalculation();
+            });
+          }
         });
 
         function computeTotal(oneWayMiles, whenDateStr, whenTimeStr, industry, serviceType, immediateDelivery) {
