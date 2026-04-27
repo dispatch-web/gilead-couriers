@@ -226,9 +226,10 @@
           <select id="serviceType" name="serviceType" required>
             <option value="oneway">One-way (Pickup → Drop-off)</option>
             <option value="return_same_day">Return same day (Deliver + collect + return to pickup)</option>
+            <option value="overnight_return">Overnight return (Deliver + collect next day + return to pickup)</option>
           </select>
           <div class="hint">
-            Return same day prices as a dedicated shuttle (miles are calculated for one-way, then priced as a round trip).
+            Return services are priced as a dedicated shuttle. The overnight return option is for jobs that are delivered one day and returned the next morning.
           </div>
 
           <div class="checkrow">
@@ -674,6 +675,10 @@
           return String(value || "").toLowerCase().replace(/[^\w\s]/g, " ").replace(/\s+/g, " ").trim();
         }
 
+        function isReturnService(serviceType) {
+          return serviceType === "return_same_day" || serviceType === "overnight_return";
+        }
+
         function getAerometLockedPrice(company, pickup, dropoff, serviceType) {
           const companyText = normaliseText(company);
           const pickupText = normaliseText(pickup);
@@ -687,9 +692,7 @@
 
           if (!isAeromet) return null;
 
-          if (serviceType !== "return_same_day") return null;
-
-          if (allText.includes("cardiff")) {
+          if (serviceType === "return_same_day" && allText.includes("cardiff")) {
             return {
               locked: true,
               manual: false,
@@ -698,12 +701,12 @@
             };
           }
 
-          if (allText.includes("stonehouse")) {
+          if (isReturnService(serviceType) && (dropoffText.includes("stonehouse") || allText.includes("stonehouse") || allText.includes("gl10 2la"))) {
             return {
               locked: true,
               manual: false,
               total: 520,
-              note: "Aeromet same-day return fixed price applied: £520."
+              note: "Aeromet overnight return fixed price applied: £520."
             };
           }
 
@@ -734,7 +737,18 @@
 
         function validateAvailability(showStatusMessage) {
           const dateVal = getVal("whenDate");
-          const blocked = isAerometBlockedDate(dateVal);
+          const serviceType = getVal("serviceType");
+          const pickup = getVal("pickup");
+          const dropoff = getVal("dropoff");
+          const company = getVal("company");
+          const routeText = normaliseText(company + " " + pickup + " " + dropoff);
+
+          const isAerometStonehouseOvernight =
+            routeText.includes("aeromet") &&
+            (routeText.includes("stonehouse") || routeText.includes("gl10 2la")) &&
+            serviceType === "overnight_return";
+
+          const blocked = isAerometStonehouseOvernight ? false : isAerometBlockedDate(dateVal);
 
           if (availabilityWarningEl) {
             availabilityWarningEl.style.display = blocked ? "block" : "none";
@@ -813,7 +827,8 @@
 
         function getPricingProfile(industry, serviceType) {
           const key = String(industry || "").trim();
-          const st = String(serviceType || "oneway").trim();
+          const requestedService = String(serviceType || "oneway").trim();
+          const st = requestedService === "overnight_return" ? "return_same_day" : requestedService;
           const industryPack = INDUSTRY_PRICING[key];
           const override = industryPack && industryPack[st] ? industryPack[st] : null;
 
@@ -906,8 +921,7 @@
             return { ok: false, manual: false, total: 0, reason: "Enter estimated miles to see an estimate." };
           }
 
-          const isReturn = String(serviceType) === "return_same_day";
-          const effectiveMiles = isReturn ? (oneWayMiles * 2) : oneWayMiles;
+          const effectiveMiles = isReturnService(serviceType) ? (oneWayMiles * 2) : oneWayMiles;
           const manualQuoteMiles = P.manualQuoteMiles;
 
           if (effectiveMiles >= manualQuoteMiles) {
@@ -960,7 +974,7 @@
 
           total = roundToNearest(total, P.rounding);
 
-          const note = isReturn ? "Return same day pricing applied (round trip)." : "";
+          const note = isReturnService(serviceType) ? "Return pricing applied." : "";
           return { ok: true, manual: false, total, reason: "", metaNote: note };
         }
 
@@ -1009,8 +1023,14 @@
 
         ["industry", "serviceType", "miles", "whenDate", "whenTime", "immediateDelivery", "company", "pickup", "dropoff"].forEach((id) => {
           const el = document.getElementById(id);
-          if (el) el.addEventListener("input", renderEstimate);
-          if (el) el.addEventListener("change", renderEstimate);
+          if (el) el.addEventListener("input", function () {
+            renderEstimate();
+            validateAvailability(false);
+          });
+          if (el) el.addEventListener("change", function () {
+            renderEstimate();
+            validateAvailability(false);
+          });
         });
 
         if (whenDateEl) {
@@ -1094,7 +1114,7 @@
           if (!aerometPrice || !aerometPrice.locked) {
             const oneWayMiles = parseMiles(payload.miles);
             const P = getPricingProfile(payload.industry, payload.serviceType);
-            const effectiveMiles = (payload.serviceType === "return_same_day") ? (oneWayMiles * 2) : oneWayMiles;
+            const effectiveMiles = isReturnService(payload.serviceType) ? (oneWayMiles * 2) : oneWayMiles;
             const manualQuoteMiles = P.manualQuoteMiles;
 
             if (effectiveMiles >= manualQuoteMiles) {
