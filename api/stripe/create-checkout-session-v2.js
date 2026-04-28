@@ -2,7 +2,6 @@ const Stripe = require('stripe');
 
 module.exports = async function handler(req, res) {
   try {
-    // Only allow POST
     if (req.method !== 'POST') {
       res.setHeader('Allow', 'POST');
       return res.status(405).json({ error: 'Method Not Allowed' });
@@ -14,7 +13,7 @@ module.exports = async function handler(req, res) {
       company = '',
       industry = '',
       serviceType = 'oneway',
-      immediateDelivery = false,  // ADDED
+      immediateDelivery = false,
       pickup = '',
       dropoff = '',
       miles = '',
@@ -25,7 +24,6 @@ module.exports = async function handler(req, res) {
       notes = ''
     } = req.body || {};
 
-    // ---------- Basic validation ----------
     if (!company || !industry || !pickup || !dropoff || !miles || !email || !whenDate || !whenTime) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -37,9 +35,53 @@ module.exports = async function handler(req, res) {
 
     const serviceTypeSafe = String(serviceType || 'oneway').trim();
     const isReturnSameDay = serviceTypeSafe === 'return_same_day';
+    const isOvernightReturn = serviceTypeSafe === 'overnight_return';
+    const isReturnService = isReturnSameDay || isOvernightReturn;
     const isImmediate = !!immediateDelivery;
 
-    // ---------- Helpers ----------
+    function normaliseText(value) {
+      return String(value || '').toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function getAerometLockedPrice(company, pickup, dropoff, serviceType) {
+      const companyText = normaliseText(company);
+      const pickupText = normaliseText(pickup);
+      const dropoffText = normaliseText(dropoff);
+      const allText = normaliseText(company + ' ' + pickup + ' ' + dropoff);
+
+      const isAeromet =
+        companyText.includes('aeromet') ||
+        pickupText.includes('aeromet') ||
+        allText.includes('aeromet');
+
+      if (!isAeromet) return null;
+
+      if (serviceType === 'return_same_day' && allText.includes('cardiff')) {
+        return {
+          locked: true,
+          total: 650,
+          note: 'Aeromet same-day return fixed price applied: £650.'
+        };
+      }
+
+      if (
+        serviceType === 'overnight_return' &&
+        (
+          dropoffText.includes('stonehouse') ||
+          allText.includes('stonehouse') ||
+          allText.includes('gl10 2la')
+        )
+      ) {
+        return {
+          locked: true,
+          total: 520,
+          note: 'Aeromet overnight return fixed price applied: £520.'
+        };
+      }
+
+      return null;
+    }
+
     function parseDateTimeUTC(dateStr, timeStr) {
       const dt = new Date(`${dateStr}T${timeStr}:00.000Z`);
       return Number.isFinite(dt.getTime()) ? dt : null;
@@ -57,13 +99,12 @@ module.exports = async function handler(req, res) {
     function makeBookingRef() {
       const now = new Date();
       const y = now.getUTCFullYear();
-      const m = String(now.getUTCMonth() + 1).padStart(2, "0");
-      const d = String(now.getUTCDate()).padStart(2, "0");
+      const m = String(now.getUTCMonth() + 1).padStart(2, '0');
+      const d = String(now.getUTCDate()).padStart(2, '0');
       const rand = String(Math.floor(1000 + Math.random() * 9000));
       return `GC-${y}${m}${d}-${rand}`;
     }
 
-    // ---------- Pricing (must match book.html) ----------
     const PRICING_VERSION = 'PR-PROFILES-V3.0';
 
     const BASE_PRICING = {
@@ -92,7 +133,7 @@ module.exports = async function handler(req, res) {
             { min: 120, max: 210, add: 20 },
             { min: 211, max: 259, add: 105 }
           ],
-          manualQuoteMiles: 260,
+          manualQuoteMiles: 500,
           urgencyMinutes: 180,
           urgencyAdd: 25,
           after17Add: 25,
@@ -176,7 +217,7 @@ module.exports = async function handler(req, res) {
         }
       },
 
-      "Financial Services": {
+      'Financial Services': {
         oneway: {
           baseUpTo20: 120,
           perMileOver20: 2.65,
@@ -263,7 +304,7 @@ module.exports = async function handler(req, res) {
         }
       },
 
-      "Government / Public Sector": {
+      'Government / Public Sector': {
         oneway: {
           baseUpTo20: 120,
           perMileOver20: 2.50,
@@ -324,7 +365,9 @@ module.exports = async function handler(req, res) {
 
     function getPricingProfile(industryKey, st) {
       const key = String(industryKey || '').trim();
-      const s = (st === 'return_same_day') ? 'return_same_day' : 'oneway';
+      const requestedService = String(st || 'oneway').trim();
+      const serviceForPricing = requestedService === 'overnight_return' ? 'return_same_day' : requestedService;
+      const s = serviceForPricing === 'return_same_day' ? 'return_same_day' : 'oneway';
 
       const industryPack = INDUSTRY_PRICING[key];
       const override = industryPack && industryPack[s] ? industryPack[s] : null;
@@ -336,12 +379,12 @@ module.exports = async function handler(req, res) {
       return merged;
     }
 
+    const lockedAerometPrice = getAerometLockedPrice(company, pickup, dropoff, serviceTypeSafe);
     const P = getPricingProfile(industry, serviceTypeSafe);
 
-    // Effective miles used for pricing / manual quote checks
-    const effectiveMiles = isReturnSameDay ? (milesNum * 2) : milesNum;
+    const effectiveMiles = isReturnService ? (milesNum * 2) : milesNum;
 
-    if (effectiveMiles >= Number(P.manualQuoteMiles)) {
+    if (!lockedAerometPrice && effectiveMiles >= Number(P.manualQuoteMiles)) {
       return res.status(400).json({
         error: `Manual quote required for ${P.manualQuoteMiles}+ miles`
       });
@@ -359,17 +402,14 @@ module.exports = async function handler(req, res) {
     const isWeekend = (dayOfWeekUTC === 0 || dayOfWeekUTC === 6);
     const isBankHoliday = false;
 
-    // Urgency: < N minutes notice (UTC)
     const now = new Date();
     const diffMinutes = (jobDT.getTime() - now.getTime()) / 60000;
     const isUrgent = diffMinutes >= 0 && diffMinutes < Number(P.urgencyMinutes || 0);
 
-    // Base + distance component (based on EFFECTIVE miles)
     const over20 = Math.max(0, effectiveMiles - 20);
     const pricingBase = Number(P.baseUpTo20);
     const pricingDistance = over20 * Number(P.perMileOver20);
 
-    // Distance uplift bracket (based on EFFECTIVE miles)
     let pricingDistanceUplift = 0;
     for (const b of (P.uplift || [])) {
       if (effectiveMiles >= b.min && effectiveMiles <= b.max) {
@@ -378,14 +418,10 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // Time-based uplifts
     const pricingUrgency = isUrgent ? Number(P.urgencyAdd || 0) : 0;
     const pricingAfter1700 = isAfter1700 ? Number(P.after17Add || 0) : 0;
-
     const pricingWeekend = (!isBankHoliday && isWeekend) ? Number(P.weekendAdd || 0) : 0;
     const pricingBankHoliday = isBankHoliday ? Number(P.bankHolidayAdd || 0) : 0;
-
-    // Immediate delivery uplift (explicit flag)
     const pricingImmediate = isImmediate ? Number(P.immediateAdd || 0) : 0;
 
     const totalBeforeRounding =
@@ -398,10 +434,12 @@ module.exports = async function handler(req, res) {
       pricingBankHoliday +
       pricingImmediate;
 
-    const calculated = roundToNearest(totalBeforeRounding, Number(P.rounding || 1));
+    const calculated = lockedAerometPrice
+      ? Number(lockedAerometPrice.total)
+      : roundToNearest(totalBeforeRounding, Number(P.rounding || 1));
+
     const amountPence = Math.round(Number(calculated) * 100);
 
-    // ---------- Schedule window computation ----------
     const AVG_MPH = 30;
     const BUFFER_MIN = 20;
 
@@ -419,7 +457,6 @@ module.exports = async function handler(req, res) {
     const totalMinutes = driveMinutes + BUFFER_MIN;
     const scheduleStart = new Date(new Date(scheduleEnd).getTime() - totalMinutes * 60 * 1000).toISOString();
 
-    // ---------- URLs ----------
     const proto = (req.headers['x-forwarded-proto'] || 'https');
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const origin = `${proto}://${host}`;
@@ -429,11 +466,18 @@ module.exports = async function handler(req, res) {
 
     const bookingRef = makeBookingRef();
 
-    // ---------- Stripe metadata ----------
+    const serviceLabel =
+      serviceTypeSafe === 'overnight_return'
+        ? 'Overnight return'
+        : isReturnSameDay
+          ? 'Return same day'
+          : 'One-way';
+
     const metadata = {
       company: String(company || ''),
       industry: String(industry || ''),
       serviceType: String(serviceTypeSafe || 'oneway'),
+      serviceLabel: String(serviceLabel),
       immediateDelivery: String(isImmediate),
 
       pickup: String(pickup),
@@ -453,6 +497,8 @@ module.exports = async function handler(req, res) {
       bookingRef: String(bookingRef),
 
       pricingRuleVersion: PRICING_VERSION,
+      pricing_locked_route: String(!!lockedAerometPrice),
+      pricing_locked_route_note: String(lockedAerometPrice ? lockedAerometPrice.note : ''),
       pricing_profile_rounding_to: String(Number(P.rounding || 1)),
       pricing_profile_manual_quote_miles: String(Number(P.manualQuoteMiles || 0)),
       pricing_base: String(n2(pricingBase)),
@@ -473,7 +519,6 @@ module.exports = async function handler(req, res) {
       urgent: String(isUrgent)
     };
 
-    // ---------- Stripe Checkout Session ----------
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: email,
@@ -487,7 +532,7 @@ module.exports = async function handler(req, res) {
             unit_amount: amountPence,
             product_data: {
               name: 'Gilead Courier Booking',
-              description: `Service: ${isReturnSameDay ? 'Return same day' : 'One-way'} | Pickup: ${pickup} → Dropoff: ${dropoff} (${Math.round(milesNum)} miles one-way)`
+              description: `Service: ${serviceLabel} | Pickup: ${pickup} → Dropoff: ${dropoff} (${Math.round(milesNum)} miles one-way)`
             }
           }
         }
