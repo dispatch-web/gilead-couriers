@@ -203,7 +203,7 @@
           <div class="row">
             <div>
               <label for="company">Company / Business name *</label>
-              <input id="company" name="company" type="text" required placeholder="e.g. Rolls Royce plc" />
+              <input id="company" name="company" type="text" required placeholder="e.g. Aeromet" />
             </div>
 
             <div>
@@ -224,6 +224,7 @@
 
           <label for="serviceType">Service type *</label>
           <select id="serviceType" name="serviceType" required>
+            <option value="">Select service type</option>
             <option value="oneway">One-way (Pickup → Drop-off)</option>
             <option value="return_same_day">Return same day (Deliver + collect + return to pickup)</option>
             <option value="overnight_return">Overnight return (Deliver + collect next day + return to pickup)</option>
@@ -241,10 +242,10 @@
           </div>
 
           <label for="pickup">Pickup address *</label>
-          <textarea id="pickup" name="pickup" required placeholder="e.g. 10 Downing Street, London SW1A 2AA"></textarea>
+          <textarea id="pickup" name="pickup" required placeholder="e.g. ME1 3QX"></textarea>
 
           <label for="dropoff">Drop-off address *</label>
-          <textarea id="dropoff" name="dropoff" required placeholder="e.g. 1 St Peter’s Square, Manchester M2 3AE"></textarea>
+          <textarea id="dropoff" name="dropoff" required placeholder="e.g. GL10 2LA"></textarea>
 
           <div class="row">
             <div>
@@ -257,7 +258,7 @@
                 min="1"
                 step="1"
                 required
-                placeholder="e.g. 234"
+                placeholder="e.g. 148"
                 readonly
                 style="margin-top:10px;"
               />
@@ -279,7 +280,7 @@
           <div class="notice">
             <strong>Booking availability</strong>
             Gilead bookings are currently available on <strong>Sunday to Wednesday</strong>.
-            <strong>Thursday, Friday and Saturday</strong> are booked up.
+            <strong>Thursday, Friday and Saturday</strong> are booked up, except agreed Aeromet overnight return work.
           </div>
 
           <div class="row">
@@ -390,6 +391,7 @@
         const customRepeatWrap = document.getElementById("customRepeatWrap");
         const customRepeatDetailsEl = document.getElementById("customRepeatDetails");
         const industryEl = document.getElementById("industry");
+        const serviceTypeEl = document.getElementById("serviceType");
 
         const PRICING = {
           baseUpTo20: 120,
@@ -679,17 +681,42 @@
           return serviceType === "return_same_day" || serviceType === "overnight_return";
         }
 
+        function isAerometStonehouseRoute(company, pickup, dropoff) {
+          const allText = normaliseText(company + " " + pickup + " " + dropoff);
+          return (
+            allText.includes("aeromet") &&
+            (
+              allText.includes("stonehouse") ||
+              allText.includes("gl10 2la")
+            )
+          );
+        }
+
+        function isAerometCardiffRoute(company, pickup, dropoff) {
+          const allText = normaliseText(company + " " + pickup + " " + dropoff);
+          return allText.includes("aeromet") && allText.includes("cardiff");
+        }
+
+        function autoSelectAerometServiceType() {
+          const company = getVal("company");
+          const pickup = getVal("pickup");
+          const dropoff = getVal("dropoff");
+
+          if (!serviceTypeEl) return;
+
+          if (isAerometStonehouseRoute(company, pickup, dropoff)) {
+            serviceTypeEl.value = "overnight_return";
+          }
+
+          if (isAerometCardiffRoute(company, pickup, dropoff) && !serviceTypeEl.value) {
+            serviceTypeEl.value = "return_same_day";
+          }
+        }
+
         function getAerometLockedPrice(company, pickup, dropoff, serviceType) {
-          const companyText = normaliseText(company);
-          const pickupText = normaliseText(pickup);
-          const dropoffText = normaliseText(dropoff);
           const allText = normaliseText(company + " " + pickup + " " + dropoff);
 
-          const isAeromet =
-            companyText.includes("aeromet") ||
-            pickupText.includes("aeromet") ||
-            allText.includes("aeromet");
-
+          const isAeromet = allText.includes("aeromet");
           if (!isAeromet) return null;
 
           if (serviceType === "return_same_day" && allText.includes("cardiff")) {
@@ -701,7 +728,13 @@
             };
           }
 
-          if (isReturnService(serviceType) && (dropoffText.includes("stonehouse") || allText.includes("stonehouse") || allText.includes("gl10 2la"))) {
+          if (
+            serviceType === "overnight_return" &&
+            (
+              allText.includes("stonehouse") ||
+              allText.includes("gl10 2la")
+            )
+          ) {
             return {
               locked: true,
               manual: false,
@@ -727,7 +760,7 @@
           return false;
         }
 
-        function isAerometBlockedDate(dateStr) {
+        function isBlockedDate(dateStr) {
           if (!dateStr) return false;
           const dt = new Date(dateStr + "T12:00:00");
           if (Number.isNaN(dt.getTime())) return false;
@@ -741,14 +774,12 @@
           const pickup = getVal("pickup");
           const dropoff = getVal("dropoff");
           const company = getVal("company");
-          const routeText = normaliseText(company + " " + pickup + " " + dropoff);
 
-          const isAerometStonehouseOvernight =
-            routeText.includes("aeromet") &&
-            (routeText.includes("stonehouse") || routeText.includes("gl10 2la")) &&
+          const isAllowedAerometOvernight =
+            isAerometStonehouseRoute(company, pickup, dropoff) &&
             serviceType === "overnight_return";
 
-          const blocked = isAerometStonehouseOvernight ? false : isAerometBlockedDate(dateVal);
+          const blocked = isAllowedAerometOvernight ? false : isBlockedDate(dateVal);
 
           if (availabilityWarningEl) {
             availabilityWarningEl.style.display = blocked ? "block" : "none";
@@ -875,7 +906,9 @@
             }
 
             setStatus(`Miles calculated: ${data.miles} miles`, "");
+            autoSelectAerometServiceType();
             renderEstimate();
+            validateAvailability(false);
           } catch (e) {
             setStatus("Could not calculate miles automatically. Please enter miles manually.", "error");
             if (milesEl) milesEl.readOnly = false;
@@ -893,6 +926,10 @@
             const milesEl = document.getElementById("miles");
             if (milesEl && !String(milesEl.value || "").trim()) {
               calculateMilesFromPostcodes();
+            } else {
+              autoSelectAerometServiceType();
+              renderEstimate();
+              validateAvailability(false);
             }
           });
         });
@@ -984,6 +1021,8 @@
         }
 
         function renderEstimate() {
+          autoSelectAerometServiceType();
+
           const oneWayMiles = parseMiles(getVal("miles"));
           const whenDate = getVal("whenDate");
           const whenTime = getVal("whenTime");
@@ -1024,10 +1063,12 @@
         ["industry", "serviceType", "miles", "whenDate", "whenTime", "immediateDelivery", "company", "pickup", "dropoff"].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.addEventListener("input", function () {
+            autoSelectAerometServiceType();
             renderEstimate();
             validateAvailability(false);
           });
           if (el) el.addEventListener("change", function () {
+            autoSelectAerometServiceType();
             renderEstimate();
             validateAvailability(false);
           });
@@ -1065,6 +1106,8 @@
 
         form.addEventListener("submit", async function (e) {
           e.preventDefault();
+
+          autoSelectAerometServiceType();
 
           if (!validateAvailability(true)) {
             submitBtn.disabled = false;
