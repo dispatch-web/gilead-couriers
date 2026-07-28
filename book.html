@@ -175,12 +175,6 @@
         color:#fff;
         vertical-align: middle;
       }
-
-      .availability-warning {
-        margin-top: 8px;
-        font-size: 12px;
-        color:#b00020;
-        display:none;
       }
 
       #customRepeatWrap {
@@ -281,9 +275,6 @@
             <div>
               <label for="whenDate">When is this job needed? (date) *</label>
               <input id="whenDate" name="whenDate" type="date" required />
-              <div id="availabilityWarning" class="availability-warning">
-                Thursday, Friday and Saturday are not available for Gilead bookings. Please choose Sunday to Wednesday.
-              </div>
             </div>
 
             <div>
@@ -381,7 +372,6 @@
         const estimateWarn = document.getElementById("estimateWarn");
 
         const whenDateEl = document.getElementById("whenDate");
-        const availabilityWarningEl = document.getElementById("availabilityWarning");
         const customRepeatWrap = document.getElementById("customRepeatWrap");
         const customRepeatDetailsEl = document.getElementById("customRepeatDetails");
         const industryEl = document.getElementById("industry");
@@ -753,45 +743,7 @@
         function isBankHolidayPlaceholder() {
           return false;
         }
-
-        function isBlockedDate(dateStr) {
-          if (!dateStr) return false;
-          const dt = new Date(dateStr + "T12:00:00");
-          if (Number.isNaN(dt.getTime())) return false;
-          const day = dt.getDay();
-          return day === 4 || day === 5 || day === 6;
         }
-
-        function validateAvailability(showStatusMessage) {
-          const dateVal = getVal("whenDate");
-          const serviceType = getVal("serviceType");
-          const pickup = getVal("pickup");
-          const dropoff = getVal("dropoff");
-          const company = getVal("company");
-
-          const isAllowedAerometOvernight =
-            isAerometStonehouseRoute(company, pickup, dropoff) &&
-            serviceType === "overnight_return";
-
-          const blocked = isAllowedAerometOvernight ? false : isBlockedDate(dateVal);
-
-          if (availabilityWarningEl) {
-            availabilityWarningEl.style.display = blocked ? "block" : "none";
-          }
-
-          if (whenDateEl) {
-            whenDateEl.setCustomValidity(
-              blocked
-                ? "Thursday, Friday and Saturday are not available for Gilead bookings."
-                : ""
-            );
-          }
-
-          if (blocked && showStatusMessage) {
-            setStatus("Thursday, Friday and Saturday are fully booked up. Please choose Sunday to Wednesday.", "error");
-          }
-
-          return !blocked;
         }
 
         function syncRepeatUI() {
@@ -902,7 +854,6 @@
             setStatus(`Miles calculated: ${data.miles} miles`, "");
             autoSelectAerometServiceType();
             renderEstimate();
-            validateAvailability(false);
           } catch (e) {
             setStatus("Could not calculate miles automatically. Please enter miles manually.", "error");
             if (milesEl) milesEl.readOnly = false;
@@ -923,7 +874,6 @@
             } else {
               autoSelectAerometServiceType();
               renderEstimate();
-              validateAvailability(false);
             }
           });
         });
@@ -1059,24 +1009,13 @@
           if (el) el.addEventListener("input", function () {
             autoSelectAerometServiceType();
             renderEstimate();
-            validateAvailability(false);
           });
           if (el) el.addEventListener("change", function () {
             autoSelectAerometServiceType();
             renderEstimate();
-            validateAvailability(false);
           });
         });
-
-        if (whenDateEl) {
-          whenDateEl.addEventListener("input", function () {
-            validateAvailability(false);
-          });
-          whenDateEl.addEventListener("change", function () {
-            validateAvailability(true);
-          });
         }
-
         document.querySelectorAll('input[name="repeatType"]').forEach((el) => {
           el.addEventListener("change", syncRepeatUI);
         });
@@ -1084,7 +1023,6 @@
         applyIndustryFromQuery();
         renderEstimate();
         syncRepeatUI();
-        validateAvailability(false);
 
         try {
           const params = new URLSearchParams(window.location.search || "");
@@ -1102,11 +1040,6 @@
           e.preventDefault();
 
           autoSelectAerometServiceType();
-
-          if (!validateAvailability(true)) {
-            submitBtn.disabled = false;
-            return;
-          }
 
           setStatus("Creating secure payment…", "");
           submitBtn.disabled = true;
