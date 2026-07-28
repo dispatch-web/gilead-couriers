@@ -175,7 +175,6 @@
         color:#fff;
         vertical-align: middle;
       }
-      }
 
       #customRepeatWrap {
         display:none;
@@ -743,10 +742,8 @@
         function isBankHolidayPlaceholder() {
           return false;
         }
-        }
-        }
 
-        function syncRepeatUI() {
+       function syncRepeatUI() {
           const repeatType = getRepeatType();
           const showCustom = repeatType === "custom";
 
@@ -1015,7 +1012,6 @@
             renderEstimate();
           });
         });
-        }
         document.querySelectorAll('input[name="repeatType"]').forEach((el) => {
           el.addEventListener("change", syncRepeatUI);
         });
