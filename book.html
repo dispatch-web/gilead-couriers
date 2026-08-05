@@ -50,6 +50,35 @@
       .row { display:flex; gap: 12px; }
       .row > div { flex:1; }
 
+      .address-row {
+        display:flex;
+        gap:12px;
+        align-items:flex-end;
+      }
+
+      .address-field {
+        flex:1;
+      }
+
+      .postcode-field {
+        flex:0 0 165px;
+      }
+
+      .address-field textarea {
+        min-height:52px;
+      }
+
+      @media (max-width: 640px) {
+        .row, .address-row {
+          flex-direction:column;
+        }
+
+        .postcode-field {
+          flex:1 1 auto;
+          width:100%;
+        }
+      }
+
       .hint { font-size: 12px; color:#666; margin-top: 6px; }
 
       .btn {
@@ -234,11 +263,29 @@
             Select only if you require a rapid pickup window. This applies a dedicated-response premium.
           </div>
 
-          <label for="pickup">Pickup address *</label>
-          <textarea id="pickup" name="pickup" required placeholder="e.g. SW1A 1AA"></textarea>
+          <div class="address-row">
+            <div class="address-field">
+              <label for="pickupAddress">Full pickup address *</label>
+              <textarea id="pickupAddress" name="pickupAddress" required placeholder="e.g. Unit 4, Example Industrial Estate, Westminster, London"></textarea>
+            </div>
 
-          <label for="dropoff">Drop-off address *</label>
-          <textarea id="dropoff" name="dropoff" required placeholder="e.g. M20 6NA"></textarea>
+            <div class="postcode-field">
+              <label for="pickupPostcode">Pickup postcode *</label>
+              <input id="pickupPostcode" name="pickupPostcode" type="text" required placeholder="e.g. SW1A 1AA" />
+            </div>
+          </div>
+
+          <div class="address-row">
+            <div class="address-field">
+              <label for="dropoffAddress">Full drop-off address *</label>
+              <textarea id="dropoffAddress" name="dropoffAddress" required placeholder="e.g. 18 Example Road, Didsbury, Manchester"></textarea>
+            </div>
+
+            <div class="postcode-field">
+              <label for="dropoffPostcode">Drop-off postcode *</label>
+              <input id="dropoffPostcode" name="dropoffPostcode" type="text" required placeholder="e.g. M20 6NA" />
+            </div>
+          </div>
 
           <div class="row">
             <div>
@@ -682,8 +729,8 @@
 
         function autoSelectAerometServiceType() {
           const company = getVal("company");
-          const pickup = getVal("pickup");
-          const dropoff = getVal("dropoff");
+          const pickup = `${getVal("pickupAddress")} ${getVal("pickupPostcode")}`.trim();
+          const dropoff = `${getVal("dropoffAddress")} ${getVal("dropoffPostcode")}`.trim();
 
           if (!serviceTypeEl) return;
 
@@ -743,7 +790,7 @@
           return false;
         }
 
-       function syncRepeatUI() {
+        function syncRepeatUI() {
           const repeatType = getRepeatType();
           const showCustom = repeatType === "custom";
 
@@ -818,8 +865,8 @@
         }
 
         async function calculateMilesFromPostcodes() {
-          const pickupText = getVal("pickup");
-          const dropoffText = getVal("dropoff");
+          const pickupText = getVal("pickupPostcode");
+          const dropoffText = getVal("dropoffPostcode");
 
           const from = extractPostcode(pickupText);
           const to = extractPostcode(dropoffText);
@@ -862,7 +909,7 @@
         const calcBtn = document.getElementById("calcMilesBtn");
         if (calcBtn) calcBtn.addEventListener("click", calculateMilesFromPostcodes);
 
-        ["pickup", "dropoff"].forEach((id) => {
+        ["pickupPostcode", "dropoffPostcode"].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.addEventListener("blur", () => {
             const milesEl = document.getElementById("miles");
@@ -878,8 +925,8 @@
         function computeTotal(oneWayMiles, whenDateStr, whenTimeStr, industry, serviceType, immediateDelivery) {
           const aerometPrice = getAerometLockedPrice(
             getVal("company"),
-            getVal("pickup"),
-            getVal("dropoff"),
+            `${getVal("pickupAddress")} ${getVal("pickupPostcode")}`.trim(),
+            `${getVal("dropoffAddress")} ${getVal("dropoffPostcode")}`.trim(),
             serviceType
           );
 
@@ -1001,7 +1048,7 @@
           }
         }
 
-        ["industry", "serviceType", "miles", "whenDate", "whenTime", "immediateDelivery", "company", "pickup", "dropoff"].forEach((id) => {
+        ["industry", "serviceType", "miles", "whenDate", "whenTime", "immediateDelivery", "company", "pickupPostcode", "pickupAddress", "dropoffPostcode", "dropoffAddress"].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.addEventListener("input", function () {
             autoSelectAerometServiceType();
@@ -1012,6 +1059,7 @@
             renderEstimate();
           });
         });
+
         document.querySelectorAll('input[name="repeatType"]').forEach((el) => {
           el.addEventListener("change", syncRepeatUI);
         });
@@ -1045,8 +1093,12 @@
             industry: getVal("industry"),
             serviceType: getVal("serviceType"),
             immediateDelivery: getChecked("immediateDelivery"),
-            pickup: getVal("pickup").trim(),
-            dropoff: getVal("dropoff").trim(),
+            pickupPostcode: getVal("pickupPostcode").trim(),
+            pickupAddress: getVal("pickupAddress").trim(),
+            pickup: `${getVal("pickupAddress").trim()}, ${getVal("pickupPostcode").trim()}`,
+            dropoffPostcode: getVal("dropoffPostcode").trim(),
+            dropoffAddress: getVal("dropoffAddress").trim(),
+            dropoff: `${getVal("dropoffAddress").trim()}, ${getVal("dropoffPostcode").trim()}`,
             miles: getVal("miles"),
             email: getVal("email").trim(),
             poNumber: getVal("poNumber").trim(),
@@ -1057,7 +1109,9 @@
             notes: getVal("notes").trim()
           };
 
-          if (!payload.company || !payload.industry || !payload.serviceType || !payload.pickup || !payload.dropoff ||
+          if (!payload.company || !payload.industry || !payload.serviceType ||
+              !payload.pickupPostcode || !payload.pickupAddress ||
+              !payload.dropoffPostcode || !payload.dropoffAddress ||
               !payload.miles || !payload.email || !payload.whenDate || !payload.whenTime) {
             setStatus("Please complete all required fields.", "error");
             submitBtn.disabled = false;
